@@ -516,6 +516,10 @@ function handleSci(val){
 
 function toggleSciMode(){
   sciMode=!sciMode;
+  // Reset estado para evitar inconsistencias al cambiar modo
+  reset();
+  updateDisplay('0');
+  elExpr.textContent='';
   const grid=document.getElementById('mainGrid');
   const modeBtn=document.getElementById('btnMode');
 
@@ -529,8 +533,8 @@ function toggleSciMode(){
       const btn=document.createElement('button');
       btn.className='btn b-sci';
       btn.dataset.val=b.val;
+      btn.dataset.sci='true';
       btn.textContent=b.label;
-      btn.addEventListener('pointerdown',e=>{e.preventDefault();vibrate();handleSci(b.val);});
       frag.appendChild(btn);
     });
     grid.insertBefore(frag,grid.firstChild);
@@ -547,10 +551,9 @@ function toggleSciMode(){
 //  HANDLER PRINCIPAL
 // ═══════════════════════════════════════
 function handle(val){
-  vibrate();
   if('0123456789'.includes(val)){
     if(justCalc){current='';justCalc=false;}
-    if(current.replace('-','').replace('.','').length>=16)return;
+    if(current.replace('-','').replace('.','').length>=20)return;
     current=current==='0'?val:current+val;
     lastKeyWasOp=false;updateDisplay(current);return;
   }
@@ -602,7 +605,13 @@ function handle(val){
 document.getElementById('mainGrid').addEventListener('pointerdown',e=>{
   e.preventDefault();
   const btn=e.target.closest('.btn');
-  if(btn&&btn.dataset.val)handle(btn.dataset.val);
+  if(!btn||!btn.dataset.val)return;
+  vibrate();
+  if(btn.dataset.sci==='true'){
+    handleSci(btn.dataset.val);
+  } else {
+    handle(btn.dataset.val);
+  }
 });
 
 // Copiar resultado
@@ -686,6 +695,7 @@ async function sendMessage(text){
   const val=elResult.textContent.replace(/,/g,'');
   const ctx=val&&val!=='0'&&val!=='Error'?`El usuario tiene el valor ${val} en pantalla. `:'';
   chatHistory.push({role:'user',content:text});
+  if(chatHistory.length>30)chatHistory=chatHistory.slice(-30);
   addTyping();
   try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{
