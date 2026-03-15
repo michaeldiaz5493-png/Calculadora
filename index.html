@@ -116,20 +116,6 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
 .b-eq{background:var(--eq);color:var(--text-dark);font-weight:800;
   font-size:clamp(22px,6vw,30px);box-shadow:0 4px 16px rgba(16,185,129,.4);}
 
-/* = grande — ocupa 2 filas */
-.btn-eq-big{
-  grid-row: span 2;
-  aspect-ratio: auto;
-  font-size: clamp(28px,8vw,40px);
-  box-shadow: 0 6px 24px rgba(16,185,129,.5);
-}
-/* 0 doble — ocupa 2 columnas */
-.btn-zero{
-  grid-column: span 2;
-  aspect-ratio: auto;
-  justify-content: flex-start;
-  padding-left: 28px;
-}
 /* Botones científicos */
 .b-sci{background:var(--sci);font-size:clamp(11px,3vw,14px);font-weight:700;}
 .b-sci-eq{grid-column:span 2;aspect-ratio:auto;height:100%;}
@@ -279,13 +265,9 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
     <button class="btn b-add" data-val="+">+</button>
 
     <button class="btn b-sign" data-val="+/-">±</button>
-    <button class="btn b-0 btn-zero" data-val="0">0</button>
+    <button class="btn b-0"   data-val="0">0</button>
     <button class="btn b-dot" data-val=".">.</button>
-    <button class="btn b-eq btn-eq-big" data-val="=">=</button>
-    <!-- Fila extra para completar el span del = -->
-    <button class="btn" data-val="" style="background:transparent;box-shadow:none;pointer-events:none;opacity:0;"></button>
-    <button class="btn" data-val="" style="background:transparent;box-shadow:none;pointer-events:none;opacity:0;"></button>
-    <button class="btn" data-val="" style="background:transparent;box-shadow:none;pointer-events:none;opacity:0;"></button>
+    <button class="btn b-eq"  data-val="=">=</button>
   </div>
 </div>
 
