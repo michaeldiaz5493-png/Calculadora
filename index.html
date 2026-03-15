@@ -2,13 +2,14 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#111318">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="CalcuPiola">
 <link rel="manifest" href="manifest.json">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&display=swap">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'">
@@ -31,9 +32,9 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
   font-family:'Space Grotesk',sans-serif;-webkit-tap-highlight-color:transparent;
   touch-action:manipulation;color:var(--text);}
 .app{display:flex;flex-direction:column;
-  height:100dvh;
+  height:100svh;
   width:100%;max-width:480px;margin:0 auto;
-  padding:12px 12px calc(12px + env(safe-area-inset-bottom, 0px)) 12px;
+  padding:12px 12px max(16px, env(safe-area-inset-bottom, 16px)) 12px;
   gap:var(--gap);}
 
 /* ── DISPLAY ── */
@@ -148,7 +149,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
 .btn{aspect-ratio:unset;width:100%;height:100%;min-height:0;border:none;border-radius:var(--radius);
   font-family:'Space Grotesk',sans-serif;font-size:clamp(17px,4.8vw,23px);font-weight:700;
   color:var(--text);cursor:pointer;position:relative;overflow:hidden;
-  transition:transform .07s,filter .07s;-webkit-user-select:none;user-select:none;
+  transition:transform .07s,filter .07s;will-change:transform;-webkit-user-select:none;user-select:none;
   display:flex;align-items:center;justify-content:center;outline:none;
   box-shadow:0 2px 8px rgba(0,0,0,.3);}
 .btn:active{transform:scale(.90);filter:brightness(1.2);}
@@ -165,7 +166,6 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
 
 /* Botones científicos */
 .b-sci{background:var(--sci);font-size:clamp(11px,3vw,14px);font-weight:700;}
-.b-sci-eq{grid-column:span 2;aspect-ratio:auto;height:100%;}
 /* Botón modo científico */
 .btn-mode{height:28px;border:1px solid rgba(124,58,237,.4);border-radius:14px;
   background:rgba(124,58,237,.15);color:#A78BFA;
@@ -490,42 +490,119 @@ function closeHistory(){
 // ═══════════════════════════════════════
 //  CÁLCULO
 // ═══════════════════════════════════════
+// ═══════════════════════════════════════
+//  MOTOR DE CÁLCULO — Shunting Yard
+//  Respeta precedencia: × ÷ antes que + −
+// ═══════════════════════════════════════
+
+const PREC = {'+':1,'-':1,'*':2,'/':2};
+
+function tokenize(expr){
+  // Convierte "4 + 3 × 2" en ["4","+","3","×","2"]
+  return expr.replace(/−/g,'-').replace(/×/g,'*').replace(/÷/g,'/')
+    .trim().split(/\s+/).filter(t=>t!=='');
+}
+
+function shuntingYard(tokens){
+  const output=[], ops=[];
+  for(const t of tokens){
+    if(t in PREC){
+      while(ops.length && ops[ops.length-1] in PREC &&
+            PREC[ops[ops.length-1]] >= PREC[t])
+        output.push(ops.pop());
+      ops.push(t);
+    } else {
+      output.push(t);
+    }
+  }
+  while(ops.length) output.push(ops.pop());
+  return output;
+}
+
+function evalRPN(rpn){
+  const stack=[];
+  for(const t of rpn){
+    if(t in PREC){
+      const b=parseFloat(stack.pop());
+      const a=parseFloat(stack.pop());
+      if(isNaN(a)||isNaN(b)) return null;
+      if(t=='/'){
+        if(b===0) return null; // división por cero
+        stack.push(a/b);
+      } else if(t==='+') stack.push(a+b);
+      else if(t==='-') stack.push(a-b);
+      else if(t==='*') stack.push(a*b);
+    } else {
+      stack.push(parseFloat(t));
+    }
+  }
+  return stack.length===1 ? stack[0] : null;
+}
+
+function evaluateExpr(expr){
+  // Evalúa una expresión completa respetando precedencia
+  if(!expr||expr.trim()==='') return null;
+  const tokens = tokenize(expr);
+  if(!tokens.length) return null;
+  const rpn = shuntingYard(tokens);
+  return evalRPN(rpn);
+}
+
 function calcPartial(){
-  // Calcula previous op current, actualiza fullExpr y previous
-  const a=parseFloat(previous), b=parseFloat(current);
-  if(isNaN(a)||isNaN(b))return null;
-  let r;
-  switch(op){
-    case'+':r=a+b;break;case'-':r=a-b;break;
-    case'*':r=a*b;break;
-    case'/':
-      if(b===0){elExpr.textContent='División entre cero';updateDisplay('Error');reset();return null;}
-      r=a/b;break;
-    case'%OP':r=b*a/100;break;
-    default:return null;
+  // Calcular usando Shunting Yard sobre fullExpr + current
+  if(previous===''||current===''||op==='') return null;
+  // Construir expresión parcial para evaluar
+  const exprToEval = fullExpr.replace(/[+−×÷]$/,'').trim() + ' ' + 
+    op.replace('−','-').replace('×','*').replace('÷','/') + ' ' + current;
+  const tokens = tokenize(exprToEval);
+  const rpn = shuntingYard(tokens);
+  const r = evalRPN(rpn);
+  if(r===null){
+    elExpr.textContent='No se puede dividir entre 0';
+    scaleExpression(elExpr.textContent);
+    updateDisplay('Error');
+    reset(); return null;
   }
   const res=fmt(r);
   fullExpr=fullExpr+' '+current;
+  scaleExpression(fullExpr);
   updateDisplay(res);
   elResult.classList.add('flash');
   clearTimeout(elResult._ft);
   elResult._ft=setTimeout(()=>elResult.classList.remove('flash'),200);
   previous=res; current=''; op='';
+  lastKeyWasOp=false;
   return res;
 }
 
 function calculate(isFinal=false){
-  const res=calcPartial();
-  if(res===null)return;
+  // Para el resultado final, evaluar TODA la expresión de una vez
   if(isFinal){
-    const finalExpr=fullExpr+' =';
+    const fullExpression = fullExpr.replace(/[+−×÷]\s*$/,'').trim() + ' ' +
+      op.replace('−','-').replace('×','*').replace('÷','/') + ' ' + current;
+    const tokens = tokenize(fullExpression);
+    const rpn = shuntingYard(tokens);
+    const r = evalRPN(rpn);
+    if(r===null){
+      elExpr.textContent='No se puede dividir entre 0';
+      scaleExpression(elExpr.textContent);
+      updateDisplay('Error');
+      reset(); return;
+    }
+    const res=fmt(r);
+    const finalExpr=(fullExpr+' '+current).trim()+' =';
     elExpr.textContent=finalExpr;
     scaleExpression(elExpr.textContent);
+    updateDisplay(res);
+    elResult.classList.add('flash');
+    clearTimeout(elResult._ft);
+    elResult._ft=setTimeout(()=>elResult.classList.remove('flash'),200);
     saveHistory(finalExpr, res);
-    fullExpr='';
-    justCalc=true;
-    lastKeyWasOp=false;
+    fullExpr=''; previous=res; current=''; op='';
+    justCalc=true; lastKeyWasOp=false;
     elResult.classList.add('final');
+  } else {
+    calcPartial();
   }
 }
 
@@ -544,6 +621,10 @@ const SCI_BUTTONS=[
 ];
 
 function handleSci(val){
+  fullExpr='';previous='';op='';current=current||'0';
+  elExpr.textContent='';
+  elExpr.style.fontSize='34px';
+  elResult.classList.remove('final');
   const n=parseFloat(current||'0');
   let r;
   switch(val){
@@ -631,13 +712,23 @@ function handle(val){
   if(val==='.'){
     if(justCalc){current='0';justCalc=false;}
     if(current==='')current='0';
-    if(!current.includes('.')){current+='.';updateDisplay(current);}
+    if(!current.includes('.')){
+      current+='.';
+      if(fullExpr!==''&&op!==''){
+        elExpr.textContent=fullExpr+' '+current;
+        scaleExpression(elExpr.textContent);
+      } else {
+        updateDisplay(current);
+      }
+    }
     lastKeyWasOp=false;return;
   }
-  if(val==='C'){reset();updateDisplay('0');elExpr.textContent='';elExpr.style.fontSize='34px';fullExpr='';elResult.classList.remove('final');return;}
+  if(val==='C'){reset();updateDisplay('0');elExpr.textContent='';elExpr.style.fontSize='34px';fullExpr='';scaleExpression('');elResult.classList.remove('final');return;}
   if(val==='DEL'){
-    if(justCalc){reset();updateDisplay('0');return;}
-    current=current.slice(0,-1);updateDisplay(current||'0');return;
+    if(justCalc){reset();updateDisplay('0');elExpr.textContent='';elExpr.style.fontSize='34px';fullExpr='';elResult.classList.remove('final');return;}
+    current=current.slice(0,-1);
+    elResult.classList.remove('final');
+    updateDisplay(current||'0');return;
   }
   if(val==='%'){
     if(current==='')return;
@@ -648,15 +739,23 @@ function handle(val){
     } else {
       previous=current;op='%OP';current='';
       lastKeyWasOp=false;elExpr.textContent=previous+' % ';
+  scaleExpression(elExpr.textContent);
     }
     return;
   }
   if(val==='+/-'){
     if(current===''||current==='0')return;
     current=current.startsWith('-')?current.slice(1):'-'+current;
-    updateDisplay(current);return;
+    updateDisplay(current);
+    // Si estamos escribiendo después de un operador, actualizar expresión visible
+    if(fullExpr!==''&&lastKeyWasOp){
+      elExpr.textContent=fullExpr+' '+current;
+      scaleExpression(elExpr.textContent);
+    }
+    return;
   }
   if(['+','-','*','/'].includes(val)){
+    elResult.classList.remove('final');
     if(current===''&&previous==='')return;
     // Cambiar operador sin calcular
     if(lastKeyWasOp){
@@ -671,8 +770,11 @@ function handle(val){
     if(previous!==''&&op!==''&&current!==''){
       calcPartial();
     } else {
-      // Primera operación: inicializar fullExpr
-      if(fullExpr===''&&current!=='') fullExpr=current;
+      // Primera operación: inicializar fullExpr con el número del display
+      if(fullExpr===''&&current!==''){
+        fullExpr=current;
+        updateDisplay('0'); // limpiar display principal
+      }
       previous=current; current='';
     }
     op=val; justCalc=false; lastKeyWasOp=true;
