@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Calculadora">
+<link rel="manifest" href="manifest.json">
+<title>Calculadora</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0a0a0a;
+    --display-bg:#111111;
+    --btn-num:   #1e1e1e;
+    --btn-op:    #1a3a2a;
+    --btn-fn:    #1a1a2e;
+    --btn-eq:    #00c853;
+    --btn-clear: #2a1a1a;
+    --accent:    #00c853;
+    --accent2:   #00e676;
+    --text:      #ffffff;
+    --text-dim:  #666666;
+    --text-expr: #888888;
+    --radius:    20px;
+    --gap:       10px;
+  }
+
+  html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    font-family: 'Outfit', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 12px;
+    gap: var(--gap);
+  }
+
+  /* ── DISPLAY ── */
+  .display {
+    flex: 1;
+    background: var(--display-bg);
+    border-radius: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-end;
+    padding: 20px 24px;
+    gap: 6px;
+    position: relative;
+    overflow: hidden;
+    min-height: 140px;
+  }
+
+  .display::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(0,200,83,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .expression {
+    font-size: clamp(14px, 3.5vw, 18px);
+    color: var(--text-expr);
+    font-weight: 300;
+    letter-spacing: 0.5px;
+    min-height: 22px;
+    transition: opacity 0.2s;
+    word-break: break-all;
+    text-align: right;
+  }
+
+  .result {
+    font-size: clamp(42px, 12vw, 64px);
+    color: var(--text);
+    font-weight: 600;
+    letter-spacing: -2px;
+    line-height: 1;
+    transition: all 0.15s ease;
+    word-break: break-all;
+    text-align: right;
+  }
+
+  .result.small { font-size: clamp(28px, 7vw, 40px); letter-spacing: -1px; }
+  .result.flash { color: var(--accent2); }
+
+  /* ── BOTONES ── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--gap);
+    flex-shrink: 0;
+  }
+
+  .btn {
+    aspect-ratio: 1;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(18px, 5vw, 24px);
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.08s ease, filter 0.08s ease;
+    -webkit-user-select: none;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    outline: none;
+  }
+
+  .btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0);
+    transition: background 0.15s;
+    border-radius: inherit;
+  }
+
+  .btn:active { transform: scale(0.92); filter: brightness(1.2); }
+  .btn:active::after { background: rgba(255,255,255,0.08); }
+
+  .btn-num   { background: var(--btn-num); }
+  .btn-op    { background: var(--btn-op);  color: var(--accent2); }
+  .btn-fn    { background: var(--btn-fn);  color: #90caf9; font-size: clamp(14px, 4vw, 18px); }
+  .btn-clear { background: var(--btn-clear); color: #ef9a9a; }
+  .btn-eq    {
+    background: var(--btn-eq);
+    color: #000;
+    box-shadow: 0 4px 20px rgba(0,200,83,0.35);
+    font-size: clamp(22px, 6vw, 28px);
+  }
+  .btn-eq:active { box-shadow: 0 2px 8px rgba(0,200,83,0.2); }
+
+  .btn-zero {
+    grid-column: span 1;
+    aspect-ratio: 1;
+  }
+
+  /* Animación de resultado */
+  @keyframes pop {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.04); }
+    100% { transform: scale(1); }
+  }
+  .pop { animation: pop 0.2s ease; }
+
+  /* Banner instalar */
+  .install-banner {
+    display: none;
+    background: linear-gradient(135deg, #1a3a2a, #0d2018);
+    border: 1px solid rgba(0,200,83,0.3);
+    border-radius: 16px;
+    padding: 12px 16px;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .install-banner.show { display: flex; }
+  .install-banner p { flex: 1; font-size: 13px; color: #aaa; line-height: 1.4; }
+  .install-banner p span { color: var(--accent); font-weight: 600; }
+  .install-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .close-banner {
+    background: none; border: none;
+    color: var(--text-dim); font-size: 18px;
+    cursor: pointer; padding: 0 4px;
+    line-height: 1;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Banner instalar PWA -->
+  <div class="install-banner" id="installBanner">
+    <p>¿Quieres tener esta <span>app en tu pantalla</span> de inicio?</p>
+    <button class="install-btn" id="installBtn">Instalar</button>
+    <button class="close-banner" id="closeBanner">✕</button>
+  </div>
+
+  <!-- Pantalla -->
+  <div class="display">
+    <div class="expression" id="expression"></div>
+    <div class="result" id="result">0</div>
+  </div>
+
+  <!-- Teclado -->
+  <div class="grid">
+    <!-- Fila 1 -->
+    <button class="btn btn-clear" data-val="C">C</button>
+    <button class="btn btn-fn"    data-val="( )">( )</button>
+    <button class="btn btn-fn"    data-val="%">%</button>
+    <button class="btn btn-op"    data-val="/">÷</button>
+
+    <!-- Fila 2 -->
+    <button class="btn btn-num" data-val="7">7</button>
+    <button class="btn btn-num" data-val="8">8</button>
+    <button class="btn btn-num" data-val="9">9</button>
+    <button class="btn btn-op"  data-val="x">×</button>
+
+    <!-- Fila 3 -->
+    <button class="btn btn-num" data-val="4">4</button>
+    <button class="btn btn-num" data-val="5">5</button>
+    <button class="btn btn-num" data-val="6">6</button>
+    <button class="btn btn-op"  data-val="-">−</button>
+
+    <!-- Fila 4 -->
+    <button class="btn btn-num" data-val="1">1</button>
+    <button class="btn btn-num" data-val="2">2</button>
+    <button class="btn btn-num" data-val="3">3</button>
+    <button class="btn btn-op"  data-val="+">+</button>
+
+    <!-- Fila 5 -->
+    <button class="btn btn-fn"  data-val="+/-">±</button>
+    <button class="btn btn-num btn-zero" data-val="0">0</button>
+    <button class="btn btn-fn"  data-val=".">.</button>
+    <button class="btn btn-eq"  data-val="=">=</button>
+  </div>
+
+</div>
+
+<script>
+  // ── Estado ──────────────────────────────────
+  let current  = '';
+  let previous = '';
+  let operator = '';
+  let shown    = false;
+
+  const elResult = document.getElementById('result');
+  const elExpr   = document.getElementById('expression');
+
+  // ── Actualizar display ───────────────────────
+  function updateDisplay(val) {
+    elResult.textContent = val || '0';
+    elResult.className = 'result' + (String(val).length > 9 ? ' small' : '');
+  }
+
+  // ── Formatear número ─────────────────────────
+  function fmt(n) {
+    if (!isFinite(n)) return 'Error';
+    if (n === Math.floor(n)) return String(Math.floor(n));
+    return String(parseFloat(n.toFixed(10)));
+  }
+
+  // ── Calcular ─────────────────────────────────
+  function calculate() {
+    const a = parseFloat(previous);
+    const b = parseFloat(current);
+    let r;
+    if (operator === '+') r = a + b;
+    if (operator === '-') r = a - b;
+    if (operator === 'x') r = a * b;
+    if (operator === '/') {
+      if (b === 0) {
+        elExpr.textContent = 'No se puede dividir entre 0';
+        updateDisplay('Error');
+        current = ''; previous = ''; operator = '';
+        return;
+      }
+      r = a / b;
+    }
+    const res = fmt(r);
+    elExpr.textContent = `${previous} ${operator === 'x' ? '×' : operator === '/' ? '÷' : operator} ${current} =`;
+    updateDisplay(res);
+    // Animación
+    elResult.classList.add('flash');
+    void elResult.offsetWidth;
+    elResult.classList.add('pop');
+    setTimeout(() => elResult.classList.remove('flash', 'pop'), 300);
+
+    current = res; previous = ''; operator = ''; shown = true;
+  }
+
+  // ── Handler principal ────────────────────────
+  function handle(val) {
+    // Dígitos
+    if ('0123456789'.includes(val)) {
+      if (shown) { current = ''; shown = false; }
+      if (current === '0') current = val;
+      else current += val;
+      updateDisplay(current);
+      return;
+    }
+    // Punto
+    if (val === '.') {
+      if (!current.includes('.')) {
+        if (current === '') current = '0';
+        current += '.';
+        updateDisplay(current);
+      }
+      return;
+    }
+    // Limpiar
+    if (val === 'C') {
+      current = ''; previous = ''; operator = ''; shown = false;
+      updateDisplay('0'); elExpr.textContent = '';
+      return;
+    }
+    // ( ) → borrar último carácter
+    if (val === '( )') {
+      if (current.length > 0) {
+        current = current.slice(0, -1);
+        updateDisplay(current || '0');
+      }
+      return;
+    }
+    // Porcentaje
+    if (val === '%') {
+      if (current !== '') {
+        current = fmt(parseFloat(current) / 100);
+        updateDisplay(current);
+      }
+      return;
+    }
+    // Signo
+    if (val === '+/-') {
+      if (current !== '' && current !== '0') {
+        current = current.startsWith('-') ? current.slice(1) : '-' + current;
+        updateDisplay(current);
+      }
+      return;
+    }
+    // Operadores
+    if (['+','-','x','/'].includes(val)) {
+      if (current !== '') {
+        if (previous !== '' && operator !== '') calculate();
+        previous = current; operator = val; current = ''; shown = false;
+        const sym = val === 'x' ? '×' : val === '/' ? '÷' : val;
+        elExpr.textContent = previous + ' ' + sym;
+      }
+      return;
+    }
+    // Igual
+    if (val === '=') {
+      if (previous !== '' && operator !== '' && current !== '') calculate();
+    }
+  }
+
+  // ── Eventos de botones ───────────────────────
+  document.querySelectorAll('.btn').forEach(btn => {
+    btn.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      handle(btn.dataset.val);
+    });
+  });
+
+  // ── PWA Install ──────────────────────────────
+  let deferredPrompt = null;
+  const banner    = document.getElementById('installBanner');
+  const installBtn = document.getElementById('installBtn');
+  const closeBtn   = document.getElementById('closeBanner');
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    banner.classList.add('show');
+  });
+
+  installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    banner.classList.remove('show');
+  });
+
+  closeBtn.addEventListener('click', () => banner.classList.remove('show'));
+
+  // Registrar Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+</script>
+</body>
+</html>
