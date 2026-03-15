@@ -30,21 +30,52 @@
 html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
   font-family:'Space Grotesk',sans-serif;-webkit-tap-highlight-color:transparent;
   touch-action:manipulation;color:var(--text);}
-.app{display:flex;flex-direction:column;height:100dvh;width:100%;
-  max-width:480px;margin:0 auto;padding:12px;gap:var(--gap);}
+.app{display:flex;flex-direction:column;
+  height:100dvh;
+  width:100%;max-width:480px;margin:0 auto;
+  padding:12px 12px calc(12px + env(safe-area-inset-bottom, 0px)) 12px;
+  gap:var(--gap);}
 
 /* ── DISPLAY ── */
-.display{flex:1;background:var(--surface);border-radius:26px;
+.display{flex:2;min-height:0;background:var(--surface);border-radius:26px;
   display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-end;
-  padding:20px 22px 16px;gap:4px;overflow:hidden;min-height:130px;
+  padding:16px 20px 14px;gap:6px;overflow:hidden;
   border:1px solid rgba(255,255,255,.05);}
 
-.expression{font-size:clamp(13px,3.2vw,17px);color:var(--text-muted);
-  font-weight:400;min-height:20px;text-align:right;word-break:break-all;}
-.result{font-size:clamp(44px,13vw,68px);color:var(--text);font-weight:700;
-  letter-spacing:-2px;line-height:1;text-align:right;word-break:break-all;}
-.result.shrink{font-size:clamp(28px,7vw,40px);letter-spacing:-1px;}
-.result.smaller{font-size:clamp(20px,5vw,28px);letter-spacing:0;}
+.expression{
+  /* Expresión — tamaño dinámico controlado por JS */
+  font-size:34px;
+  color:var(--text);
+  font-weight:600;
+  min-height:36px;
+  text-align:right;
+  word-break:break-all;
+  overflow:hidden;
+  line-height:1.3;
+  white-space:nowrap;
+  letter-spacing:-0.5px;
+  transition:font-size 0.15s ease;
+}
+.result{
+  /* Resultado — más pequeño y tenue, es la respuesta parcial/final */
+  font-size:clamp(18px,5vw,26px);
+  color:var(--text-muted);
+  font-weight:400;
+  line-height:1.2;
+  text-align:right;
+  word-break:break-all;
+  margin-top:4px;
+  letter-spacing:0;
+}
+/* Cuando se muestra el resultado final (tras =) invertir jerarquía */
+.result.final{
+  font-size:clamp(36px,10vw,56px);
+  color:var(--text);
+  font-weight:700;
+  letter-spacing:-2px;
+}
+.result.shrink{font-size:clamp(24px,6.5vw,36px);}
+.result.smaller{font-size:clamp(16px,4.5vw,22px);}
 @keyframes flash{0%,100%{opacity:1}50%{opacity:.35}}
 .result.flash{animation:flash .18s ease}
 
@@ -107,12 +138,14 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
 @keyframes tipIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
 /* ── GRID ── */
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--gap);flex-shrink:0;}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);
+  grid-auto-rows:1fr;gap:var(--gap);
+  flex:3;min-height:0;}
 
 /* Grid científico — 5 columnas */
 .grid.sci-mode{grid-template-columns:repeat(5,1fr);}
 
-.btn{aspect-ratio:1;border:none;border-radius:var(--radius);
+.btn{aspect-ratio:unset;width:100%;height:100%;min-height:0;border:none;border-radius:var(--radius);
   font-family:'Space Grotesk',sans-serif;font-size:clamp(17px,4.8vw,23px);font-weight:700;
   color:var(--text);cursor:pointer;position:relative;overflow:hidden;
   transition:transform .07s,filter .07s;-webkit-user-select:none;user-select:none;
@@ -337,6 +370,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
 //  ESTADO
 // ═══════════════════════════════════════
 let current='',previous='',op='',justCalc=false,lastKeyWasOp=false;
+let fullExpr=''; // expresión completa encadenada
 let sciMode=false;
 let calcHistory=[];
 try{calcHistory=JSON.parse(localStorage.getItem('calcHistory')||'[]');}catch(e){calcHistory=[];}
@@ -372,6 +406,19 @@ function updateDisplay(val){
   elResult.className='result'+(len>12?' smaller':len>8?' shrink':'');
 }
 
+function scaleExpression(text){
+  // Escala automática según longitud del texto
+  const len = text.length;
+  let size;
+  if      (len <= 8)  size = 34;
+  else if (len <= 12) size = 28;
+  else if (len <= 16) size = 24;
+  else if (len <= 22) size = 20;
+  else if (len <= 28) size = 17;
+  else                size = 14;
+  elExpr.style.fontSize = size + 'px';
+}
+
 // ═══════════════════════════════════════
 //  FORMATEAR NÚMERO
 // ═══════════════════════════════════════
@@ -381,7 +428,7 @@ function fmt(n){
   return Number.isInteger(r)?String(r):String(r);
 }
 function opSym(o){return{'+':'+','-':'−','*':'×','/':'÷','%OP':'%'}[o]||o;}
-function reset(){current='';previous='';op='';justCalc=false;lastKeyWasOp=false;}
+function reset(){current='';previous='';op='';justCalc=false;lastKeyWasOp=false;fullExpr='';}
 
 // ═══════════════════════════════════════
 //  VIBRACIÓN
@@ -443,28 +490,43 @@ function closeHistory(){
 // ═══════════════════════════════════════
 //  CÁLCULO
 // ═══════════════════════════════════════
-function calculate(){
-  const a=parseFloat(previous),b=parseFloat(current);
-  if(isNaN(a)||isNaN(b))return;
+function calcPartial(){
+  // Calcula previous op current, actualiza fullExpr y previous
+  const a=parseFloat(previous), b=parseFloat(current);
+  if(isNaN(a)||isNaN(b))return null;
   let r;
   switch(op){
     case'+':r=a+b;break;case'-':r=a-b;break;
     case'*':r=a*b;break;
     case'/':
-      if(b===0){elExpr.textContent='División entre cero';updateDisplay('Error');reset();return;}
+      if(b===0){elExpr.textContent='División entre cero';updateDisplay('Error');reset();return null;}
       r=a/b;break;
     case'%OP':r=b*a/100;break;
-    default:return;
+    default:return null;
   }
   const res=fmt(r);
-  const expr=`${previous} ${opSym(op)} ${current} =`;
-  elExpr.textContent=expr;
+  fullExpr=fullExpr+' '+current;
   updateDisplay(res);
   elResult.classList.add('flash');
   clearTimeout(elResult._ft);
   elResult._ft=setTimeout(()=>elResult.classList.remove('flash'),200);
-  saveHistory(expr,res);
-  current=res;previous='';op='';justCalc=true;lastKeyWasOp=false;
+  previous=res; current=''; op='';
+  return res;
+}
+
+function calculate(isFinal=false){
+  const res=calcPartial();
+  if(res===null)return;
+  if(isFinal){
+    const finalExpr=fullExpr+' =';
+    elExpr.textContent=finalExpr;
+    scaleExpression(elExpr.textContent);
+    saveHistory(finalExpr, res);
+    fullExpr='';
+    justCalc=true;
+    lastKeyWasOp=false;
+    elResult.classList.add('final');
+  }
 }
 
 // ═══════════════════════════════════════
@@ -561,7 +623,7 @@ function toggleSciMode(){
 // ═══════════════════════════════════════
 function handle(val){
   if('0123456789'.includes(val)){
-    if(justCalc){current='';justCalc=false;}
+    if(justCalc){current='';justCalc=false;fullExpr='';elResult.classList.remove('final');}
     if(current.replace('-','').replace('.','').length>=20)return;
     current=current==='0'?val:current+val;
     lastKeyWasOp=false;updateDisplay(current);return;
@@ -572,7 +634,7 @@ function handle(val){
     if(!current.includes('.')){current+='.';updateDisplay(current);}
     lastKeyWasOp=false;return;
   }
-  if(val==='C'){reset();updateDisplay('0');elExpr.textContent='';return;}
+  if(val==='C'){reset();updateDisplay('0');elExpr.textContent='';elExpr.style.fontSize='34px';fullExpr='';elResult.classList.remove('final');return;}
   if(val==='DEL'){
     if(justCalc){reset();updateDisplay('0');return;}
     current=current.slice(0,-1);updateDisplay(current||'0');return;
@@ -596,15 +658,33 @@ function handle(val){
   }
   if(['+','-','*','/'].includes(val)){
     if(current===''&&previous==='')return;
-    if(lastKeyWasOp){op=val;elExpr.textContent=previous+' '+opSym(val);return;}
-    if(previous!==''&&op!==''&&current!=='')calculate();
-    if(current!==''){previous=current;current='';}
-    op=val;justCalc=false;lastKeyWasOp=true;
-    elExpr.textContent=previous+' '+opSym(val);return;
+    // Cambiar operador sin calcular
+    if(lastKeyWasOp){
+      fullExpr=fullExpr.trimEnd();
+      fullExpr=fullExpr.substring(0,fullExpr.lastIndexOf(' ')+1).trimEnd()+' '+opSym(val);
+      op=val;
+      elExpr.textContent=fullExpr;
+      scaleExpression(elExpr.textContent);
+      return;
+    }
+    // Calcular parcial si hay operación pendiente
+    if(previous!==''&&op!==''&&current!==''){
+      calcPartial();
+    } else {
+      // Primera operación: inicializar fullExpr
+      if(fullExpr===''&&current!=='') fullExpr=current;
+      previous=current; current='';
+    }
+    op=val; justCalc=false; lastKeyWasOp=true;
+    fullExpr=fullExpr+' '+opSym(val);
+    elExpr.textContent=fullExpr;
+      scaleExpression(elExpr.textContent);
+    return;
   }
   if(val==='='){
     if(previous===''||op===''||current==='')return;
-    lastKeyWasOp=false;calculate();
+    lastKeyWasOp=false;
+    calculate(true);
   }
 }
 

@@ -1,4 +1,4 @@
-const CACHE = 'calcupiola-v7';
+const CACHE = 'calcupiola-v17';
 const FILES = [
   './',
   './index.html',
