@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#13111a">
+<meta name="theme-color" content="#111318">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,194 +11,316 @@
 <link rel="manifest" href="manifest.json">
 <title>Calculadora IA</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700;800&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#13111a;--display-bg:#1c1928;--radius:22px;--gap:9px;
-  --c-clear:#ff3b5c;--c-paren:#ff6b35;--c-pct:#f7c59f;--c-div:#7b2d8b;
-  --c-7:#1b4f8a;--c-8:#1976d2;--c-9:#0097a7;--c-mul:#7b2d8b;
-  --c-4:#2e7d32;--c-5:#388e3c;--c-6:#689f38;--c-sub:#7b2d8b;
-  --c-1:#e65100;--c-2:#f57c00;--c-3:#fbc02d;--c-add:#7b2d8b;
-  --c-sign:#37474f;--c-0:#263238;--c-dot:#455a64;--c-eq:#00c853;
-  --c-ai:#6c35de;
+  --bg:#111318;--surface:#1B1F27;--surface2:#222731;
+  --text:#E8ECF3;--text-muted:#98A2B3;--text-dark:#111318;
+  --n1:#3B82F6;--n2:#2563EB;--n3:#0EA5E9;--n4:#0284C7;
+  --n5:#0891B2;--n6:#0E7490;--n7:#0D9488;--n8:#0F766E;--n9:#059669;--n0:#1E293B;
+  --fn-clear:#EF4444;--fn-del:#F97316;--fn-pct:#EAB308;--fn-sign:#475569;--fn-dot:#334155;
+  --op:#4F46E5;--eq:#10B981;--ai-from:#F59E0B;--ai-to:#FBBF24;
+  --sci:#7C3AED;
+  --radius:20px;--gap:9px;
 }
 html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
-  font-family:'Space Grotesk',sans-serif;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+  font-family:'Space Grotesk',sans-serif;-webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;color:var(--text);}
 .app{display:flex;flex-direction:column;height:100dvh;width:100%;
-  max-width:480px;margin:0 auto;padding:12px;gap:var(--gap)}
+  max-width:480px;margin:0 auto;padding:12px;gap:var(--gap);}
 
 /* ── DISPLAY ── */
-.display{flex:1;background:var(--display-bg);border-radius:28px;
+.display{flex:1;background:var(--surface);border-radius:26px;
   display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-end;
-  padding:22px 24px 18px;gap:4px;position:relative;overflow:hidden;min-height:130px}
-.display::after{content:'';position:absolute;top:-80px;right:-80px;width:220px;height:220px;
-  background:radial-gradient(circle,rgba(108,53,222,0.1) 0%,transparent 70%);pointer-events:none}
-.expression{font-size:clamp(13px,3.2vw,17px);color:#6b6580;font-weight:400;
-  min-height:20px;text-align:right;word-break:break-all;letter-spacing:.3px}
-.result{font-size:clamp(44px,13vw,68px);color:#f0eeff;font-weight:700;
-  letter-spacing:-3px;line-height:1;text-align:right;word-break:break-all;transition:font-size .1s}
-.result.shrink{font-size:clamp(26px,7vw,38px);letter-spacing:-1px}
-.result.smaller{font-size:clamp(20px,5vw,28px);letter-spacing:0}
-@keyframes flash{0%,100%{opacity:1}50%{opacity:.4}}
+  padding:20px 22px 16px;gap:4px;position:relative;overflow:hidden;min-height:130px;
+  border:1px solid rgba(255,255,255,.05);}
+.display::before{content:'';position:absolute;top:-60px;right:-60px;
+  width:180px;height:180px;
+  background:radial-gradient(circle,rgba(79,70,229,.08) 0%,transparent 70%);pointer-events:none;}
+.expression{font-size:clamp(13px,3.2vw,17px);color:var(--text-muted);
+  font-weight:400;min-height:20px;text-align:right;word-break:break-all;}
+.result{font-size:clamp(44px,13vw,68px);color:var(--text);font-weight:700;
+  letter-spacing:-2px;line-height:1;text-align:right;word-break:break-all;}
+.result.shrink{font-size:clamp(28px,7vw,40px);letter-spacing:-1px;}
+.result.smaller{font-size:clamp(20px,5vw,28px);letter-spacing:0;}
+@keyframes flash{0%,100%{opacity:1}50%{opacity:.35}}
 .result.flash{animation:flash .18s ease}
 
+/* Botones dentro del display */
+.display-actions{
+  position:absolute;bottom:14px;left:12px;
+  display:flex;gap:8px;align-items:center;
+}
+/* FAB IA */
+.fab-ai{height:32px;border-radius:16px;border:none;
+  background:linear-gradient(135deg,var(--ai-from),var(--ai-to));
+  color:#000;font-family:'Space Grotesk',sans-serif;
+  font-size:11px;font-weight:800;cursor:pointer;
+  display:flex;align-items:center;gap:4px;padding:0 12px 0 8px;
+  box-shadow:0 3px 14px rgba(245,158,11,.5);
+  animation:pulseAi 3s infinite;transition:transform .12s;overflow:hidden;white-space:nowrap;}
+.fab-ai .fab-icon{font-size:13px;flex-shrink:0;}
+.fab-ai .fab-text{font-size:11px;font-weight:800;color:#000;}
+.fab-ai.compact{padding:0;width:32px;border-radius:50%;}
+.fab-ai.compact .fab-text{display:none;}
+.fab-ai:active{transform:scale(.9);}
+@keyframes pulseAi{
+  0%,100%{box-shadow:0 3px 14px rgba(245,158,11,.5),0 0 0 0 rgba(251,191,36,.3);}
+  60%    {box-shadow:0 3px 14px rgba(245,158,11,.5),0 0 0 8px rgba(251,191,36,.0);}
+}
+/* Botón copiar */
+.btn-copy{height:32px;width:32px;border-radius:50%;border:none;
+  background:rgba(255,255,255,.08);color:var(--text-muted);
+  font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .15s,transform .1s;}
+.btn-copy:active{transform:scale(.88);background:rgba(255,255,255,.15);}
+.btn-copy.copied{background:var(--eq);color:#000;}
+/* Botón historial */
+.btn-hist{height:32px;width:32px;border-radius:50%;border:none;
+  background:rgba(255,255,255,.08);color:var(--text-muted);
+  font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .15s,transform .1s;}
+.btn-hist:active{transform:scale(.88);}
+/* Tooltip */
+.fab-tooltip{position:absolute;bottom:54px;left:12px;
+  background:var(--ai-to);color:#000;font-family:'Space Grotesk',sans-serif;
+  font-size:11px;font-weight:800;padding:5px 10px;border-radius:10px;
+  white-space:nowrap;pointer-events:none;
+  box-shadow:0 3px 12px rgba(0,0,0,.4);
+  animation:tipIn .35s ease .9s both;z-index:6;}
+.fab-tooltip::after{content:'';position:absolute;top:100%;left:14px;
+  border:5px solid transparent;border-top-color:var(--ai-to);}
+@keyframes tipIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
 /* ── GRID ── */
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--gap);flex-shrink:0}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--gap);flex-shrink:0;}
+
+/* Grid científico — 5 columnas */
+.grid.sci-mode{grid-template-columns:repeat(5,1fr);}
+
 .btn{aspect-ratio:1;border:none;border-radius:var(--radius);
   font-family:'Space Grotesk',sans-serif;font-size:clamp(17px,4.8vw,23px);font-weight:700;
-  color:#fff;cursor:pointer;position:relative;overflow:hidden;
+  color:var(--text);cursor:pointer;position:relative;overflow:hidden;
   transition:transform .07s,filter .07s;-webkit-user-select:none;user-select:none;
   display:flex;align-items:center;justify-content:center;outline:none;
-  text-shadow:0 1px 3px rgba(0,0,0,.4);box-shadow:0 3px 10px rgba(0,0,0,.35)}
-.btn:active{transform:scale(.90);filter:brightness(1.25)}
-.b-C{background:var(--c-clear)}.b-par{background:var(--c-paren)}
-.b-pct{background:var(--c-pct);color:#222;text-shadow:none}
-.b-div{background:var(--c-div)}.b-7{background:var(--c-7)}.b-8{background:var(--c-8)}
-.b-9{background:var(--c-9)}.b-mul{background:var(--c-mul)}.b-4{background:var(--c-4)}
-.b-5{background:var(--c-5)}.b-6{background:var(--c-6)}.b-sub{background:var(--c-sub)}
-.b-1{background:var(--c-1)}.b-2{background:var(--c-2)}
-.b-3{background:var(--c-3);color:#222;text-shadow:none}
-.b-add{background:var(--c-add)}.b-sign{background:var(--c-sign)}.b-0{background:var(--c-0)}
-.b-dot{background:var(--c-dot)}
-.b-eq{background:var(--c-eq);color:#000;text-shadow:none;
-  font-size:clamp(22px,6vw,30px);box-shadow:0 4px 18px rgba(0,200,83,.4)}
-.b-ai{background:var(--c-ai);font-size:clamp(13px,3.5vw,16px);
-  box-shadow:0 4px 18px rgba(108,53,222,.4);letter-spacing:-.3px}
+  box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.btn:active{transform:scale(.90);filter:brightness(1.2);}
+.b-7{background:var(--n1)}.b-8{background:var(--n2)}.b-9{background:var(--n3)}
+.b-4{background:var(--n4)}.b-5{background:var(--n5)}.b-6{background:var(--n6)}
+.b-1{background:var(--n7)}.b-2{background:var(--n8)}.b-3{background:var(--n9)}
+.b-0{background:var(--n0)}
+.b-div,.b-mul,.b-sub,.b-add{background:var(--op)}
+.b-C{background:var(--fn-clear)}.b-del{background:var(--fn-del)}
+.b-pct{background:var(--fn-pct);color:var(--text-dark);font-weight:800;}
+.b-sign{background:var(--fn-sign)}.b-dot{background:var(--fn-dot)}
+.b-eq{background:var(--eq);color:var(--text-dark);font-weight:800;
+  font-size:clamp(22px,6vw,30px);box-shadow:0 4px 16px rgba(16,185,129,.4);}
 
-/* ══════════════════════════════════════════
-   CHAT IA
-══════════════════════════════════════════ */
-.chat-overlay{
-  display:none;position:fixed;inset:0;z-index:100;
-  background:rgba(0,0,0,.6);backdrop-filter:blur(4px);
-  align-items:flex-end;justify-content:center}
-.chat-overlay.open{display:flex}
+/* = grande — ocupa 2 filas */
+.btn-eq-big{
+  grid-row: span 2;
+  aspect-ratio: auto;
+  font-size: clamp(28px,8vw,40px);
+  box-shadow: 0 6px 24px rgba(16,185,129,.5);
+}
+/* 0 doble — ocupa 2 columnas */
+.btn-zero{
+  grid-column: span 2;
+  aspect-ratio: auto;
+  justify-content: flex-start;
+  padding-left: 28px;
+}
+/* Botones científicos */
+.b-sci{background:var(--sci);font-size:clamp(11px,3vw,14px);font-weight:700;}
+.b-sci-eq{grid-column:span 2;aspect-ratio:auto;height:100%;}
+/* Botón modo científico */
+.btn-mode{height:28px;border:1px solid rgba(124,58,237,.4);border-radius:14px;
+  background:rgba(124,58,237,.15);color:#A78BFA;
+  font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;
+  padding:0 10px;cursor:pointer;white-space:nowrap;transition:background .15s;}
+.btn-mode.active{background:var(--sci);color:#fff;border-color:var(--sci);}
+.btn-mode:active{filter:brightness(1.2);}
 
-.chat-box{
-  width:100%;max-width:480px;height:72vh;
-  background:#1c1928;border-radius:28px 28px 0 0;
-  display:flex;flex-direction:column;overflow:hidden;
-  box-shadow:0 -8px 40px rgba(108,53,222,.3);
-  animation:slideUp .25s ease}
+/* ── HISTORIAL ── */
+.history-overlay{display:none;position:fixed;inset:0;z-index:90;
+  background:rgba(0,0,0,.65);backdrop-filter:blur(5px);
+  align-items:flex-end;justify-content:center;}
+.history-overlay.open{display:flex;}
+.history-box{width:100%;max-width:480px;height:60vh;background:var(--surface);
+  border-radius:28px 28px 0 0;display:flex;flex-direction:column;overflow:hidden;
+  border:1px solid rgba(255,255,255,.06);animation:slideUp .25s ease;}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.history-header{display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;background:var(--surface2);flex-shrink:0;
+  border-bottom:1px solid rgba(255,255,255,.05);}
+.history-header h3{font-size:15px;font-weight:700;color:var(--text);}
+.history-clear{background:none;border:none;color:#EF4444;
+  font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
+.history-close{background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;}
+.history-list{flex:1;overflow-y:auto;padding:8px 0;}
+.history-list::-webkit-scrollbar{width:3px;}
+.history-list::-webkit-scrollbar-thumb{background:var(--surface2);}
+.history-item{display:flex;flex-direction:column;padding:12px 20px;
+  cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);
+  transition:background .15s;}
+.history-item:active{background:rgba(255,255,255,.05);}
+.history-item .h-expr{font-size:12px;color:var(--text-muted);}
+.history-item .h-result{font-size:20px;font-weight:700;color:var(--text);}
+.history-empty{display:flex;align-items:center;justify-content:center;
+  height:100%;color:var(--text-muted);font-size:14px;}
 
-.chat-header{
-  display:flex;align-items:center;gap:12px;
-  padding:16px 20px;background:#211d30;flex-shrink:0;
-  border-bottom:1px solid #2e2845}
-.chat-avatar{
-  width:36px;height:36px;border-radius:50%;
-  background:linear-gradient(135deg,#6c35de,#c084fc);
-  display:flex;align-items:center;justify-content:center;
-  font-size:18px;flex-shrink:0}
-.chat-title{flex:1}
-.chat-title h3{font-size:15px;font-weight:700;color:#f0eeff}
-.chat-title p{font-size:11px;color:#6b6580;margin-top:1px}
-.chat-close{background:none;border:none;color:#6b6580;font-size:22px;cursor:pointer;padding:0 4px;line-height:1}
+/* ══════════════ CHAT IA ══════════════ */
+.chat-overlay{display:none;position:fixed;inset:0;z-index:100;
+  background:rgba(0,0,0,.65);backdrop-filter:blur(5px);
+  align-items:flex-end;justify-content:center;}
+.chat-overlay.open{display:flex;}
+.chat-box{width:100%;max-width:480px;height:72vh;background:var(--surface);
+  border-radius:28px 28px 0 0;display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 -6px 40px rgba(79,70,229,.25);animation:slideUp .25s ease;
+  border:1px solid rgba(255,255,255,.06);}
+.chat-header{display:flex;align-items:center;gap:12px;padding:16px 20px;
+  background:var(--surface2);flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.05);}
+.chat-avatar{width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,var(--ai-from),var(--ai-to));
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.chat-title h3{font-size:15px;font-weight:700;color:var(--text);}
+.chat-title p{font-size:11px;color:var(--text-muted);margin-top:1px;}
+.chat-close{background:none;border:none;color:var(--text-muted);font-size:22px;
+  cursor:pointer;padding:0 4px;line-height:1;margin-left:auto;}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;
+  gap:10px;scroll-behavior:smooth;}
+.chat-messages::-webkit-scrollbar{width:3px;}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--surface2);}
+.msg{max-width:85%;padding:10px 14px;border-radius:18px;font-size:14px;
+  line-height:1.5;animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.msg.bot{background:var(--surface2);color:var(--text);
+  border-radius:18px 18px 18px 4px;align-self:flex-start;}
+.msg.user{background:linear-gradient(135deg,var(--op),#6366F1);color:#fff;
+  border-radius:18px 18px 4px 18px;align-self:flex-end;}
+.msg.typing{background:var(--surface2);color:var(--text-muted);
+  font-style:italic;align-self:flex-start;}
+.suggestions{display:flex;gap:8px;padding:0 16px 10px;overflow-x:auto;flex-shrink:0;}
+.suggestions::-webkit-scrollbar{display:none;}
+.sug-btn{background:var(--surface2);border:1px solid rgba(79,70,229,.3);
+  border-radius:20px;color:#818CF8;font-family:'Space Grotesk',sans-serif;font-size:12px;
+  padding:6px 12px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.sug-btn:active{background:rgba(79,70,229,.2);}
+.chat-input-row{display:flex;gap:8px;padding:12px 16px;background:var(--surface2);
+  flex-shrink:0;border-top:1px solid rgba(255,255,255,.05);}
+.chat-input{flex:1;background:var(--bg);border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;padding:10px 14px;color:var(--text);
+  font-family:'Space Grotesk',sans-serif;font-size:14px;outline:none;}
+.chat-input::placeholder{color:#475569;}
+.chat-send{width:42px;height:42px;border-radius:14px;border:none;
+  background:linear-gradient(135deg,var(--ai-from),var(--ai-to));
+  color:#000;font-size:18px;cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;}
+.chat-send:active{transform:scale(.92);}
+.chat-send:disabled{opacity:.4;cursor:default;}
+.current-val-badge{display:none;background:rgba(79,70,229,.15);
+  border:1px solid rgba(79,70,229,.3);border-radius:10px;padding:6px 14px;
+  margin:0 16px 8px;font-size:12px;color:#818CF8;flex-shrink:0;text-align:center;}
+.current-val-badge.show{display:block;}
 
-.chat-messages{
-  flex:1;overflow-y:auto;padding:16px;display:flex;
-  flex-direction:column;gap:10px;scroll-behavior:smooth}
-.chat-messages::-webkit-scrollbar{width:3px}
-.chat-messages::-webkit-scrollbar-thumb{background:#2e2845;border-radius:2px}
-
-.msg{max-width:85%;padding:10px 14px;border-radius:18px;
-  font-size:14px;line-height:1.5;animation:fadeIn .2s ease}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.msg.bot{background:#211d30;color:#d4cff0;border-radius:18px 18px 18px 4px;align-self:flex-start}
-.msg.user{background:linear-gradient(135deg,#6c35de,#8b5cf6);color:#fff;
-  border-radius:18px 18px 4px 18px;align-self:flex-end}
-.msg.typing{background:#211d30;color:#6b6580;font-style:italic;align-self:flex-start}
-
-/* Sugerencias rápidas */
-.suggestions{display:flex;gap:8px;padding:0 16px 10px;overflow-x:auto;flex-shrink:0}
-.suggestions::-webkit-scrollbar{display:none}
-.sug-btn{background:#211d30;border:1px solid #2e2845;border-radius:20px;
-  color:#a78bfa;font-family:'Space Grotesk',sans-serif;font-size:12px;
-  padding:6px 12px;cursor:pointer;white-space:nowrap;flex-shrink:0;
-  transition:background .15s}
-.sug-btn:active{background:#2e2845}
-
-.chat-input-row{
-  display:flex;gap:8px;padding:12px 16px;
-  background:#211d30;flex-shrink:0;border-top:1px solid #2e2845}
-.chat-input{
-  flex:1;background:#13111a;border:1px solid #2e2845;border-radius:14px;
-  padding:10px 14px;color:#f0eeff;font-family:'Space Grotesk',sans-serif;
-  font-size:14px;outline:none;resize:none;
-  -webkit-appearance:none}
-.chat-input::placeholder{color:#3d3659}
-.chat-send{
-  width:42px;height:42px;border-radius:14px;border:none;
-  background:linear-gradient(135deg,#6c35de,#8b5cf6);
-  color:#fff;font-size:18px;cursor:pointer;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 3px 10px rgba(108,53,222,.4)}
-.chat-send:active{transform:scale(.92)}
-.chat-send:disabled{opacity:.4;cursor:default}
-
-/* Valor actual badge */
-.current-val-badge{
-  display:none;background:#2e2845;border:1px solid #6c35de44;
-  border-radius:12px;padding:6px 14px;margin:0 16px 8px;
-  font-size:12px;color:#a78bfa;flex-shrink:0;text-align:center}
-.current-val-badge.show{display:block}
+/* Toast */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--surface2);color:var(--text);border:1px solid rgba(255,255,255,.1);
+  border-radius:20px;padding:8px 18px;font-size:13px;font-weight:600;
+  opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:200;
+  white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 </style>
 </head>
 <body>
 <div class="app">
+
+  <!-- Display -->
   <div class="display">
     <div class="expression" id="expression"></div>
-    <div class="result"     id="result">0</div>
+    <div class="result" id="result">0</div>
+    <div class="display-actions">
+      <button class="fab-ai" id="btnAI">
+        <span class="fab-icon">✨</span>
+        <span class="fab-text">Pregúntale a la IA</span>
+      </button>
+      <button class="btn-copy" id="btnCopy" title="Copiar resultado">⎘</button>
+      <button class="btn-hist" id="btnHist" title="Historial">🕐</button>
+    </div>
+    <div class="fab-tooltip" id="fabTooltip">¡Resuelvo cualquier cálculo!</div>
   </div>
-  <div class="grid">
-    <button class="btn b-C"    data-val="C">C</button>
-    <button class="btn b-par"  data-val="DEL">⌫</button>
-    <button class="btn b-pct"  data-val="%">%</button>
-    <button class="btn b-div"  data-val="/">÷</button>
-    <button class="btn b-7"    data-val="7">7</button>
-    <button class="btn b-8"    data-val="8">8</button>
-    <button class="btn b-9"    data-val="9">9</button>
-    <button class="btn b-mul"  data-val="*">×</button>
-    <button class="btn b-4"    data-val="4">4</button>
-    <button class="btn b-5"    data-val="5">5</button>
-    <button class="btn b-6"    data-val="6">6</button>
-    <button class="btn b-sub"  data-val="-">−</button>
-    <button class="btn b-1"    data-val="1">1</button>
-    <button class="btn b-2"    data-val="2">2</button>
-    <button class="btn b-3"    data-val="3">3</button>
-    <button class="btn b-add"  data-val="+">+</button>
+
+  <!-- Barra modo científico -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px;">
+    <span style="font-size:11px;color:var(--text-muted);">Modo</span>
+    <button class="btn-mode" id="btnMode">🔬 Científico</button>
+  </div>
+
+  <!-- Grid básico -->
+  <div class="grid" id="mainGrid">
+    <button class="btn b-C"   data-val="C">C</button>
+    <button class="btn b-del" data-val="DEL">⌫</button>
+    <button class="btn b-pct" data-val="%">%</button>
+    <button class="btn b-div" data-val="/">÷</button>
+
+    <button class="btn b-7"   data-val="7">7</button>
+    <button class="btn b-8"   data-val="8">8</button>
+    <button class="btn b-9"   data-val="9">9</button>
+    <button class="btn b-mul" data-val="*">×</button>
+
+    <button class="btn b-4"   data-val="4">4</button>
+    <button class="btn b-5"   data-val="5">5</button>
+    <button class="btn b-6"   data-val="6">6</button>
+    <button class="btn b-sub" data-val="-">−</button>
+
+    <button class="btn b-1"   data-val="1">1</button>
+    <button class="btn b-2"   data-val="2">2</button>
+    <button class="btn b-3"   data-val="3">3</button>
+    <button class="btn b-add" data-val="+">+</button>
+
     <button class="btn b-sign" data-val="+/-">±</button>
-    <button class="btn b-0"    data-val="0">0</button>
-    <button class="btn b-dot"  data-val=".">.</button>
-    <button class="btn b-ai"   data-val="AI" id="btnAI">✨ IA</button>
+    <button class="btn b-0 btn-zero" data-val="0">0</button>
+    <button class="btn b-dot" data-val=".">.</button>
+    <button class="btn b-eq btn-eq-big" data-val="=">=</button>
+    <!-- Fila extra para completar el span del = -->
+    <button class="btn" data-val="" style="background:transparent;box-shadow:none;pointer-events:none;opacity:0;"></button>
+    <button class="btn" data-val="" style="background:transparent;box-shadow:none;pointer-events:none;opacity:0;"></button>
+    <button class="btn" data-val="" style="background:transparent;box-shadow:none;pointer-events:none;opacity:0;"></button>
   </div>
 </div>
 
-<!-- ══ CHAT IA ══ -->
+<!-- Historial -->
+<div class="history-overlay" id="historyOverlay">
+  <div class="history-box">
+    <div class="history-header">
+      <h3>🕐 Historial</h3>
+      <button class="history-clear" id="historyClear">Borrar todo</button>
+      <button class="history-close" id="historyClose">✕</button>
+    </div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+</div>
+
+<!-- Chat IA -->
 <div class="chat-overlay" id="chatOverlay">
   <div class="chat-box">
     <div class="chat-header">
-      <div class="chat-avatar">🤖</div>
+      <div class="chat-avatar">✨</div>
       <div class="chat-title">
         <h3>Asistente Matemático</h3>
         <p>Powered by Claude · siempre disponible</p>
       </div>
       <button class="chat-close" id="chatClose">✕</button>
     </div>
-
     <div class="current-val-badge" id="currentValBadge"></div>
-
     <div class="chat-messages" id="chatMessages"></div>
-
-    <div class="suggestions" id="suggestions">
+    <div class="suggestions">
       <button class="sug-btn" data-q="¿Cuánto es el 15% de propina sobre este valor?">💰 15% propina</button>
       <button class="sug-btn" data-q="Explícame el resultado paso a paso">📖 Explicar</button>
       <button class="sug-btn" data-q="Convierte este valor de dólares a euros">💱 USD→EUR</button>
       <button class="sug-btn" data-q="¿Cuánto es este valor con 21% de IVA?">🧾 +IVA</button>
       <button class="sug-btn" data-q="¿Cuánto es el 20% de descuento sobre este valor?">🏷️ 20% desc.</button>
     </div>
-
     <div class="chat-input-row">
       <input class="chat-input" id="chatInput" placeholder="Pregunta algo matemático…" autocomplete="off">
       <button class="chat-send" id="chatSend">➤</button>
@@ -206,49 +328,222 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
   </div>
 </div>
 
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
 <script>
-// ═══════════════════════════════════════════
-//  CALCULADORA
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════════
+//  ESTADO
+// ═══════════════════════════════════════
 let current='',previous='',op='',justCalc=false,lastKeyWasOp=false;
+let sciMode=false;
+let calcHistory=JSON.parse(localStorage.getItem('calcHistory')||'[]');
+
 const elResult=document.getElementById('result');
 const elExpr=document.getElementById('expression');
 
+// ═══════════════════════════════════════
+//  SEPARADOR DE MILES
+// ═══════════════════════════════════════
+function formatDisplay(val){
+  if(val===''||val==='-')return val||'0';
+  if(val==='Error')return'Error';
+  const parts=val.split('.');
+  // Agregar separador de miles solo a la parte entera
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return parts.join('.');
+}
+
 function updateDisplay(val){
   const s=String(val);
-  elResult.textContent=s||'0';
-  elResult.className='result'+(s.length>12?' smaller':s.length>8?' shrink':'');
+  elResult.textContent=formatDisplay(s);
+  const len=s.replace(/[,.-]/g,'').length;
+  elResult.className='result'+(len>12?' smaller':len>8?' shrink':'');
 }
+
+// ═══════════════════════════════════════
+//  FORMATEAR NÚMERO
+// ═══════════════════════════════════════
 function fmt(n){
   if(!isFinite(n))return'Error';
   const r=parseFloat(n.toPrecision(10));
-  if(Number.isInteger(r))return String(r);
-  return String(r);
+  return Number.isInteger(r)?String(r):String(r);
 }
-function opSymbol(o){return{'+':'+','-':'−','*':'×','/':'÷'}[o]||o;}
+function opSym(o){return{'+':'+','-':'−','*':'×','/':'÷','%OP':'%'}[o]||o;}
 function reset(){current='';previous='';op='';justCalc=false;lastKeyWasOp=false;}
 
+// ═══════════════════════════════════════
+//  VIBRACIÓN
+// ═══════════════════════════════════════
+function vibrate(){
+  if('vibrate' in navigator) navigator.vibrate(15);
+}
+
+// ═══════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+// ═══════════════════════════════════════
+//  HISTORIAL
+// ═══════════════════════════════════════
+function saveHistory(expr,result){
+  calcHistory.unshift({expr,result,time:Date.now()});
+  if(calcHistory.length>50)calcHistory.pop();
+  localStorage.setItem('calcHistory',JSON.stringify(calcHistory));
+}
+
+function renderHistory(){
+  const list=document.getElementById('historyList');
+  if(calcHistory.length===0){
+    list.innerHTML='<div class="history-empty">Sin cálculos aún</div>';
+    return;
+  }
+  list.innerHTML=calcHistory.map((h,i)=>`
+    <div class="history-item" data-index="${i}">
+      <span class="h-expr">${h.expr}</span>
+      <span class="h-result">${formatDisplay(h.result)}</span>
+    </div>`).join('');
+  list.querySelectorAll('.history-item').forEach(item=>{
+    item.addEventListener('click',()=>{
+      const h=calcHistory[item.dataset.index];
+      current=h.result;
+      justCalc=true;
+      updateDisplay(current);
+      elExpr.textContent=h.expr;
+      closeHistory();
+    });
+  });
+}
+
+function openHistory(){
+  renderHistory();
+  document.getElementById('historyOverlay').classList.add('open');
+}
+function closeHistory(){
+  document.getElementById('historyOverlay').classList.remove('open');
+}
+
+// ═══════════════════════════════════════
+//  CÁLCULO
+// ═══════════════════════════════════════
 function calculate(){
   const a=parseFloat(previous),b=parseFloat(current);
   if(isNaN(a)||isNaN(b))return;
-  let result;
+  let r;
   switch(op){
-    case'+':result=a+b;break;case'-':result=a-b;break;
-    case'*':result=a*b;break;
+    case'+':r=a+b;break;case'-':r=a-b;break;
+    case'*':r=a*b;break;
     case'/':
       if(b===0){elExpr.textContent='División entre cero';updateDisplay('Error');reset();return;}
-      result=a/b;break;
+      r=a/b;break;
+    case'%OP':r=b*a/100;break;
     default:return;
   }
-  const res=fmt(result);
-  elExpr.textContent=`${previous} ${opSymbol(op)} ${current} =`;
+  const res=fmt(r);
+  const expr=`${previous} ${opSym(op)} ${current} =`;
+  elExpr.textContent=expr;
   updateDisplay(res);
   elResult.classList.add('flash');
   setTimeout(()=>elResult.classList.remove('flash'),200);
+  saveHistory(expr,res);
   current=res;previous='';op='';justCalc=true;lastKeyWasOp=false;
 }
 
+// ═══════════════════════════════════════
+//  MODO CIENTÍFICO
+// ═══════════════════════════════════════
+const SCI_BUTTONS=[
+  {val:'sin',label:'sin'},  {val:'cos',label:'cos'},
+  {val:'tan',label:'tan'},  {val:'log',label:'log'},
+  {val:'ln',label:'ln'},    {val:'sqrt',label:'√x'},
+  {val:'pow2',label:'x²'},  {val:'pow3',label:'x³'},
+  {val:'inv',label:'1/x'},  {val:'pi',label:'π'},
+  {val:'e',label:'e'},      {val:'fact',label:'n!'},
+  {val:'abs',label:'|x|'},  {val:'(',label:'('},
+  {val:')',label:')'},
+];
+
+function handleSci(val){
+  const n=parseFloat(current||'0');
+  let r;
+  switch(val){
+    case'sin': r=fmt(Math.sin(n*Math.PI/180));break;
+    case'cos': r=fmt(Math.cos(n*Math.PI/180));break;
+    case'tan':
+      if(Math.abs(Math.cos(n*Math.PI/180))<1e-10){showToast('Indefinido');return;}
+      r=fmt(Math.tan(n*Math.PI/180));break;
+    case'log':
+      if(n<=0){showToast('Solo números positivos');return;}
+      r=fmt(Math.log10(n));break;
+    case'ln':
+      if(n<=0){showToast('Solo números positivos');return;}
+      r=fmt(Math.log(n));break;
+    case'sqrt':
+      if(n<0){showToast('No existe raíz de negativos');return;}
+      r=fmt(Math.sqrt(n));break;
+    case'pow2': r=fmt(n*n);break;
+    case'pow3': r=fmt(n*n*n);break;
+    case'inv':
+      if(n===0){showToast('División entre cero');return;}
+      r=fmt(1/n);break;
+    case'pi':  r='3.14159265358979';break;
+    case'e':   r='2.71828182845904';break;
+    case'fact':
+      if(n<0||!Number.isInteger(n)){showToast('Solo enteros positivos');return;}
+      if(n>170){showToast('Número muy grande');return;}
+      let f=1;for(let i=2;i<=n;i++)f*=i;
+      r=fmt(f);break;
+    case'abs': r=fmt(Math.abs(n));break;
+    case'(':
+    case')':   return; // reservado para futura implementación
+    default: return;
+  }
+  const expr=`${val}(${current}) =`;
+  elExpr.textContent=expr;
+  current=r;justCalc=true;
+  updateDisplay(current);
+  if(r!=='Error')saveHistory(expr,r);
+}
+
+function toggleSciMode(){
+  sciMode=!sciMode;
+  const grid=document.getElementById('mainGrid');
+  const modeBtn=document.getElementById('btnMode');
+
+  if(sciMode){
+    grid.className='grid sci-mode';
+    modeBtn.classList.add('active');
+    modeBtn.textContent='📐 Básico';
+    // Agregar botones científicos al inicio del grid
+    const frag=document.createDocumentFragment();
+    SCI_BUTTONS.forEach(b=>{
+      const btn=document.createElement('button');
+      btn.className='btn b-sci';
+      btn.dataset.val=b.val;
+      btn.textContent=b.label;
+      btn.addEventListener('pointerdown',e=>{e.preventDefault();vibrate();handleSci(b.val);});
+      frag.appendChild(btn);
+    });
+    grid.insertBefore(frag,grid.firstChild);
+  } else {
+    grid.className='grid';
+    modeBtn.classList.remove('active');
+    modeBtn.textContent='🔬 Científico';
+    // Quitar botones científicos
+    grid.querySelectorAll('.b-sci').forEach(b=>b.remove());
+  }
+}
+
+// ═══════════════════════════════════════
+//  HANDLER PRINCIPAL
+// ═══════════════════════════════════════
 function handle(val){
+  vibrate();
   if('0123456789'.includes(val)){
     if(justCalc){current='';justCalc=false;}
     if(current.replace('-','').replace('.','').length>=12)return;
@@ -269,8 +564,14 @@ function handle(val){
   if(val==='%'){
     if(current==='')return;
     const n=parseFloat(current);
-    current=previous!==''&&op!==''?fmt(parseFloat(previous)*n/100):fmt(n/100);
-    updateDisplay(current);lastKeyWasOp=false;return;
+    if(previous!==''&&op!==''&&op!=='%OP'){
+      current=op==='+'||op==='-'?fmt(parseFloat(previous)*n/100):fmt(n/100);
+      updateDisplay(current);
+    } else {
+      previous=current;op='%OP';current='';
+      lastKeyWasOp=false;elExpr.textContent=previous+' % ';
+    }
+    return;
   }
   if(val==='+/-'){
     if(current===''||current==='0')return;
@@ -279,169 +580,151 @@ function handle(val){
   }
   if(['+','-','*','/'].includes(val)){
     if(current===''&&previous==='')return;
-    if(lastKeyWasOp){op=val;elExpr.textContent=previous+' '+opSymbol(val);return;}
+    if(lastKeyWasOp){op=val;elExpr.textContent=previous+' '+opSym(val);return;}
     if(previous!==''&&op!==''&&current!=='')calculate();
     if(current!==''){previous=current;current='';}
     op=val;justCalc=false;lastKeyWasOp=true;
-    elExpr.textContent=previous+' '+opSymbol(val);return;
+    elExpr.textContent=previous+' '+opSym(val);return;
   }
   if(val==='='){
     if(previous===''||op===''||current==='')return;
     lastKeyWasOp=false;calculate();
   }
-  if(val==='AI'){openChat();return;}
 }
 
+// ═══════════════════════════════════════
+//  EVENTOS BOTONES
+// ═══════════════════════════════════════
 document.querySelectorAll('.btn').forEach(btn=>{
   btn.addEventListener('pointerdown',e=>{e.preventDefault();handle(btn.dataset.val);});
 });
 
-// ═══════════════════════════════════════════
+// Copiar resultado
+document.getElementById('btnCopy').addEventListener('click',()=>{
+  const val=elResult.textContent.replace(/,/g,'');
+  navigator.clipboard.writeText(val).then(()=>{
+    const btn=document.getElementById('btnCopy');
+    btn.classList.add('copied');btn.textContent='✓';
+    showToast('Copiado al portapapeles');
+    setTimeout(()=>{btn.classList.remove('copied');btn.textContent='⎘';},1500);
+  }).catch(()=>{
+    // Fallback para navegadores sin clipboard API
+    const ta=document.createElement('textarea');
+    ta.value=val;document.body.appendChild(ta);
+    ta.select();document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Copiado al portapapeles');
+  });
+});
+
+// Historial
+document.getElementById('btnHist').addEventListener('click',openHistory);
+document.getElementById('historyClose').addEventListener('click',closeHistory);
+document.getElementById('historyClear').addEventListener('click',()=>{
+  calcHistory=[];localStorage.removeItem('calcHistory');renderHistory();
+});
+document.getElementById('historyOverlay').addEventListener('pointerdown',e=>{
+  if(e.target===document.getElementById('historyOverlay'))closeHistory();
+});
+
+// Modo científico
+document.getElementById('btnMode').addEventListener('click',toggleSciMode);
+
+// FAB IA
+document.getElementById('btnAI').addEventListener('click',openChat);
+
+// ═══════════════════════════════════════
 //  CHAT IA
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════════
 const overlay=document.getElementById('chatOverlay');
 const msgs=document.getElementById('chatMessages');
 const input=document.getElementById('chatInput');
 const sendBtn=document.getElementById('chatSend');
 const badge=document.getElementById('currentValBadge');
-let chatHistory=[];
-let isLoading=false;
+let chatHistory=[],isLoading=false;
 
 function openChat(){
   overlay.classList.add('open');
-  // Mostrar valor actual si hay uno
-  const val=elResult.textContent;
+  const fab=document.getElementById('btnAI');
+  if(fab)fab.classList.add('compact');
+  const tip=document.getElementById('fabTooltip');
+  if(tip)tip.style.display='none';
+  const val=elResult.textContent.replace(/,/g,'');
   if(val&&val!=='0'&&val!=='Error'){
-    badge.textContent=`Valor en pantalla: ${val}`;
+    badge.textContent='Valor en pantalla: '+elResult.textContent;
     badge.classList.add('show');
-  } else {
-    badge.classList.remove('show');
-  }
-  // Mensaje de bienvenida solo la primera vez
+  } else badge.classList.remove('show');
   if(msgs.children.length===0){
-    addMsg('bot','👋 ¡Hola! Soy tu asistente matemático. Puedo ayudarte a:\n\n• Resolver problemas paso a paso\n• Calcular propinas, descuentos e impuestos\n• Convertir unidades y monedas\n• Explicar cualquier cálculo\n\n¿En qué te puedo ayudar?');
+    addMsg('bot','👋 ¡Hola! Soy tu asistente matemático.\n\nPuedo ayudarte a:\n• Resolver problemas paso a paso\n• Calcular propinas, descuentos e impuestos\n• Convertir monedas y unidades\n• Explicar cualquier operación\n\n¿En qué te ayudo?');
   }
   setTimeout(()=>input.focus(),300);
 }
-
-function closeChat(){
-  overlay.classList.remove('open');
-}
-
+function closeChat(){overlay.classList.remove('open');}
 function addMsg(role,text){
-  const div=document.createElement('div');
-  div.className=`msg ${role}`;
-  div.textContent=text;
-  msgs.appendChild(div);
-  msgs.scrollTop=msgs.scrollHeight;
-  return div;
+  const d=document.createElement('div');
+  d.className='msg '+role;d.textContent=text;
+  msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return d;
 }
-
 function addTyping(){
-  const div=document.createElement('div');
-  div.className='msg typing';
-  div.id='typing';
-  div.textContent='Escribiendo…';
-  msgs.appendChild(div);
-  msgs.scrollTop=msgs.scrollHeight;
+  const d=document.createElement('div');
+  d.className='msg typing';d.id='typing';d.textContent='Escribiendo…';
+  msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;
 }
-
-function removeTyping(){
-  const t=document.getElementById('typing');
-  if(t)t.remove();
-}
+function removeTyping(){const t=document.getElementById('typing');if(t)t.remove();}
 
 async function sendMessage(text){
   if(!text.trim()||isLoading)return;
-  isLoading=true;
-  sendBtn.disabled=true;
-  input.value='';
-
-  // Mensaje usuario
+  isLoading=true;sendBtn.disabled=true;input.value='';
   addMsg('user',text);
-
-  // Contexto con valor actual
-  const val=elResult.textContent;
-  const ctx=val&&val!=='0'&&val!=='Error'
-    ?`El usuario tiene actualmente el valor ${val} en la calculadora. `:'';
-
-  // Historial para contexto
+  const val=elResult.textContent.replace(/,/g,'');
+  const ctx=val&&val!=='0'&&val!=='Error'?`El usuario tiene el valor ${val} en pantalla. `:'';
   chatHistory.push({role:'user',content:text});
-
   addTyping();
-
   try{
-    const response=await fetch('https://api.anthropic.com/v1/messages',{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:1000,
-        system:`Eres un asistente matemático integrado en una calculadora móvil. 
-${ctx}
-Ayudas con cálculos, explicas paso a paso, conviertes unidades y monedas, calculas propinas, descuentos e impuestos.
-Responde siempre en español, de forma clara y concisa. 
-Usa emojis ocasionalmente para hacer la respuesta más amigable.
-Si el usuario pregunta sobre el valor en pantalla, úsalo en tus cálculos.
-Máximo 3-4 líneas por respuesta salvo que se pida explicación detallada.`,
-        messages:chatHistory.slice(-6) // últimos 6 mensajes para contexto
+        system:`Eres un asistente matemático en una calculadora móvil. ${ctx}Responde en español, de forma clara y concisa. Usa emojis ocasionalmente. Máximo 4 líneas salvo que pidan explicación detallada.`,
+        messages:chatHistory.slice(-6)
       })
     });
-
-    const data=await response.json();
+    const data=await res.json();
     removeTyping();
-
-    if(data.content&&data.content[0]){
+    if(data.content?.[0]){
       const reply=data.content[0].text;
       chatHistory.push({role:'assistant',content:reply});
       addMsg('bot',reply);
-    } else {
-      addMsg('bot','⚠️ No pude obtener respuesta. Verifica tu conexión.');
-    }
-  } catch(e){
-    removeTyping();
-    addMsg('bot','⚠️ Error de conexión. Asegúrate de tener internet.');
-  }
-
-  isLoading=false;
-  sendBtn.disabled=false;
-  input.focus();
+    } else addMsg('bot','⚠️ Sin respuesta. Verifica tu conexión.');
+  }catch(e){removeTyping();addMsg('bot','⚠️ Error de conexión. Necesitas internet.');}
+  isLoading=false;sendBtn.disabled=false;input.focus();
 }
 
-// Eventos chat
 document.getElementById('chatClose').addEventListener('click',closeChat);
 overlay.addEventListener('pointerdown',e=>{if(e.target===overlay)closeChat();});
-
 sendBtn.addEventListener('click',()=>sendMessage(input.value));
 input.addEventListener('keydown',e=>{if(e.key==='Enter')sendMessage(input.value);});
-
-document.querySelectorAll('.sug-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>sendMessage(btn.dataset.q));
+document.querySelectorAll('.sug-btn').forEach(b=>{
+  b.addEventListener('click',()=>sendMessage(b.dataset.q));
 });
 
-// ═══════════════════════════════════════════
-//  PWA
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════════
+//  PWA + AUTO-UPDATE
+// ═══════════════════════════════════════
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js').then(reg => {
-    // Revisa si hay nueva versión cada vez que se abre la app
-    reg.addEventListener('updatefound', () => {
-      const newSW = reg.installing;
-      newSW.addEventListener('statechange', () => {
-        if(newSW.state === 'installed' && navigator.serviceWorker.controller){
-          // Hay nueva versión lista — recargar automáticamente
+  navigator.serviceWorker.register('sw.js').then(reg=>{
+    reg.addEventListener('updatefound',()=>{
+      const sw=reg.installing;
+      sw.addEventListener('statechange',()=>{
+        if(sw.state==='installed'&&navigator.serviceWorker.controller)
           window.location.reload();
-        }
       });
     });
-    // Fuerza revisión de actualización al abrir
     reg.update();
   }).catch(()=>{});
-
-  // Si el SW toma control por primera vez, recargar para aplicar cambios
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    window.location.reload();
-  });
+  navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());
 }
 </script>
 </body>
