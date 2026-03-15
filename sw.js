@@ -1,10 +1,10 @@
-const CACHE = 'calcupiola-v2';
+const CACHE = 'calcupiola-v3';
 const FILES = [
-  '/Calculadora/',
-  '/Calculadora/index.html',
-  '/Calculadora/manifest.json',
-  '/Calculadora/icon-192.png',
-  '/Calculadora/icon-512.png'
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', e => {
