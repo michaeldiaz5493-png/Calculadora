@@ -3,409 +3,428 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#0a0a0a">
+<meta name="theme-color" content="#13111a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Calculadora">
 <link rel="manifest" href="manifest.json">
-<title>Calculadora</title>
+<title>Calculadora IA</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#13111a;--display-bg:#1c1928;--radius:22px;--gap:9px;
+  --c-clear:#ff3b5c;--c-paren:#ff6b35;--c-pct:#f7c59f;--c-div:#7b2d8b;
+  --c-7:#1b4f8a;--c-8:#1976d2;--c-9:#0097a7;--c-mul:#7b2d8b;
+  --c-4:#2e7d32;--c-5:#388e3c;--c-6:#689f38;--c-sub:#7b2d8b;
+  --c-1:#e65100;--c-2:#f57c00;--c-3:#fbc02d;--c-add:#7b2d8b;
+  --c-sign:#37474f;--c-0:#263238;--c-dot:#455a64;--c-eq:#00c853;
+  --c-ai:#6c35de;
+}
+html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
+  font-family:'Space Grotesk',sans-serif;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.app{display:flex;flex-direction:column;height:100dvh;width:100%;
+  max-width:480px;margin:0 auto;padding:12px;gap:var(--gap)}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── DISPLAY ── */
+.display{flex:1;background:var(--display-bg);border-radius:28px;
+  display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-end;
+  padding:22px 24px 18px;gap:4px;position:relative;overflow:hidden;min-height:130px}
+.display::after{content:'';position:absolute;top:-80px;right:-80px;width:220px;height:220px;
+  background:radial-gradient(circle,rgba(108,53,222,0.1) 0%,transparent 70%);pointer-events:none}
+.expression{font-size:clamp(13px,3.2vw,17px);color:#6b6580;font-weight:400;
+  min-height:20px;text-align:right;word-break:break-all;letter-spacing:.3px}
+.result{font-size:clamp(44px,13vw,68px);color:#f0eeff;font-weight:700;
+  letter-spacing:-3px;line-height:1;text-align:right;word-break:break-all;transition:font-size .1s}
+.result.shrink{font-size:clamp(26px,7vw,38px);letter-spacing:-1px}
+.result.smaller{font-size:clamp(20px,5vw,28px);letter-spacing:0}
+@keyframes flash{0%,100%{opacity:1}50%{opacity:.4}}
+.result.flash{animation:flash .18s ease}
 
-  :root {
-    --bg:        #0a0a0a;
-    --display-bg:#111111;
-    --btn-num:   #1e1e1e;
-    --btn-op:    #1a3a2a;
-    --btn-fn:    #1a1a2e;
-    --btn-eq:    #00c853;
-    --btn-clear: #2a1a1a;
-    --accent:    #00c853;
-    --accent2:   #00e676;
-    --text:      #ffffff;
-    --text-dim:  #666666;
-    --text-expr: #888888;
-    --radius:    20px;
-    --gap:       10px;
-  }
+/* ── GRID ── */
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--gap);flex-shrink:0}
+.btn{aspect-ratio:1;border:none;border-radius:var(--radius);
+  font-family:'Space Grotesk',sans-serif;font-size:clamp(17px,4.8vw,23px);font-weight:700;
+  color:#fff;cursor:pointer;position:relative;overflow:hidden;
+  transition:transform .07s,filter .07s;-webkit-user-select:none;user-select:none;
+  display:flex;align-items:center;justify-content:center;outline:none;
+  text-shadow:0 1px 3px rgba(0,0,0,.4);box-shadow:0 3px 10px rgba(0,0,0,.35)}
+.btn:active{transform:scale(.90);filter:brightness(1.25)}
+.b-C{background:var(--c-clear)}.b-par{background:var(--c-paren)}
+.b-pct{background:var(--c-pct);color:#222;text-shadow:none}
+.b-div{background:var(--c-div)}.b-7{background:var(--c-7)}.b-8{background:var(--c-8)}
+.b-9{background:var(--c-9)}.b-mul{background:var(--c-mul)}.b-4{background:var(--c-4)}
+.b-5{background:var(--c-5)}.b-6{background:var(--c-6)}.b-sub{background:var(--c-sub)}
+.b-1{background:var(--c-1)}.b-2{background:var(--c-2)}
+.b-3{background:var(--c-3);color:#222;text-shadow:none}
+.b-add{background:var(--c-add)}.b-sign{background:var(--c-sign)}.b-0{background:var(--c-0)}
+.b-dot{background:var(--c-dot)}
+.b-eq{background:var(--c-eq);color:#000;text-shadow:none;
+  font-size:clamp(22px,6vw,30px);box-shadow:0 4px 18px rgba(0,200,83,.4)}
+.b-ai{background:var(--c-ai);font-size:clamp(13px,3.5vw,16px);
+  box-shadow:0 4px 18px rgba(108,53,222,.4);letter-spacing:-.3px}
 
-  html, body {
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
-    background: var(--bg);
-    font-family: 'Outfit', sans-serif;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-  }
+/* ══════════════════════════════════════════
+   CHAT IA
+══════════════════════════════════════════ */
+.chat-overlay{
+  display:none;position:fixed;inset:0;z-index:100;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(4px);
+  align-items:flex-end;justify-content:center}
+.chat-overlay.open{display:flex}
 
-  .app {
-    display: flex;
-    flex-direction: column;
-    height: 100dvh;
-    width: 100%;
-    max-width: 480px;
-    margin: 0 auto;
-    padding: 12px;
-    gap: var(--gap);
-  }
+.chat-box{
+  width:100%;max-width:480px;height:72vh;
+  background:#1c1928;border-radius:28px 28px 0 0;
+  display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 -8px 40px rgba(108,53,222,.3);
+  animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 
-  /* ── DISPLAY ── */
-  .display {
-    flex: 1;
-    background: var(--display-bg);
-    border-radius: 24px;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    align-items: flex-end;
-    padding: 20px 24px;
-    gap: 6px;
-    position: relative;
-    overflow: hidden;
-    min-height: 140px;
-  }
+.chat-header{
+  display:flex;align-items:center;gap:12px;
+  padding:16px 20px;background:#211d30;flex-shrink:0;
+  border-bottom:1px solid #2e2845}
+.chat-avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,#6c35de,#c084fc);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0}
+.chat-title{flex:1}
+.chat-title h3{font-size:15px;font-weight:700;color:#f0eeff}
+.chat-title p{font-size:11px;color:#6b6580;margin-top:1px}
+.chat-close{background:none;border:none;color:#6b6580;font-size:22px;cursor:pointer;padding:0 4px;line-height:1}
 
-  .display::before {
-    content: '';
-    position: absolute;
-    top: -60px; right: -60px;
-    width: 200px; height: 200px;
-    background: radial-gradient(circle, rgba(0,200,83,0.06) 0%, transparent 70%);
-    pointer-events: none;
-  }
+.chat-messages{
+  flex:1;overflow-y:auto;padding:16px;display:flex;
+  flex-direction:column;gap:10px;scroll-behavior:smooth}
+.chat-messages::-webkit-scrollbar{width:3px}
+.chat-messages::-webkit-scrollbar-thumb{background:#2e2845;border-radius:2px}
 
-  .expression {
-    font-size: clamp(14px, 3.5vw, 18px);
-    color: var(--text-expr);
-    font-weight: 300;
-    letter-spacing: 0.5px;
-    min-height: 22px;
-    transition: opacity 0.2s;
-    word-break: break-all;
-    text-align: right;
-  }
+.msg{max-width:85%;padding:10px 14px;border-radius:18px;
+  font-size:14px;line-height:1.5;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.msg.bot{background:#211d30;color:#d4cff0;border-radius:18px 18px 18px 4px;align-self:flex-start}
+.msg.user{background:linear-gradient(135deg,#6c35de,#8b5cf6);color:#fff;
+  border-radius:18px 18px 4px 18px;align-self:flex-end}
+.msg.typing{background:#211d30;color:#6b6580;font-style:italic;align-self:flex-start}
 
-  .result {
-    font-size: clamp(42px, 12vw, 64px);
-    color: var(--text);
-    font-weight: 600;
-    letter-spacing: -2px;
-    line-height: 1;
-    transition: all 0.15s ease;
-    word-break: break-all;
-    text-align: right;
-  }
+/* Sugerencias rápidas */
+.suggestions{display:flex;gap:8px;padding:0 16px 10px;overflow-x:auto;flex-shrink:0}
+.suggestions::-webkit-scrollbar{display:none}
+.sug-btn{background:#211d30;border:1px solid #2e2845;border-radius:20px;
+  color:#a78bfa;font-family:'Space Grotesk',sans-serif;font-size:12px;
+  padding:6px 12px;cursor:pointer;white-space:nowrap;flex-shrink:0;
+  transition:background .15s}
+.sug-btn:active{background:#2e2845}
 
-  .result.small { font-size: clamp(28px, 7vw, 40px); letter-spacing: -1px; }
-  .result.flash { color: var(--accent2); }
+.chat-input-row{
+  display:flex;gap:8px;padding:12px 16px;
+  background:#211d30;flex-shrink:0;border-top:1px solid #2e2845}
+.chat-input{
+  flex:1;background:#13111a;border:1px solid #2e2845;border-radius:14px;
+  padding:10px 14px;color:#f0eeff;font-family:'Space Grotesk',sans-serif;
+  font-size:14px;outline:none;resize:none;
+  -webkit-appearance:none}
+.chat-input::placeholder{color:#3d3659}
+.chat-send{
+  width:42px;height:42px;border-radius:14px;border:none;
+  background:linear-gradient(135deg,#6c35de,#8b5cf6);
+  color:#fff;font-size:18px;cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 3px 10px rgba(108,53,222,.4)}
+.chat-send:active{transform:scale(.92)}
+.chat-send:disabled{opacity:.4;cursor:default}
 
-  /* ── BOTONES ── */
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--gap);
-    flex-shrink: 0;
-  }
-
-  .btn {
-    aspect-ratio: 1;
-    border: none;
-    border-radius: var(--radius);
-    font-family: 'Outfit', sans-serif;
-    font-size: clamp(18px, 5vw, 24px);
-    font-weight: 600;
-    color: var(--text);
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.08s ease, filter 0.08s ease;
-    -webkit-user-select: none;
-    user-select: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    outline: none;
-  }
-
-  .btn::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: rgba(255,255,255,0);
-    transition: background 0.15s;
-    border-radius: inherit;
-  }
-
-  .btn:active { transform: scale(0.92); filter: brightness(1.2); }
-  .btn:active::after { background: rgba(255,255,255,0.08); }
-
-  .btn-num   { background: var(--btn-num); }
-  .btn-op    { background: var(--btn-op);  color: var(--accent2); }
-  .btn-fn    { background: var(--btn-fn);  color: #90caf9; font-size: clamp(14px, 4vw, 18px); }
-  .btn-clear { background: var(--btn-clear); color: #ef9a9a; }
-  .btn-eq    {
-    background: var(--btn-eq);
-    color: #000;
-    box-shadow: 0 4px 20px rgba(0,200,83,0.35);
-    font-size: clamp(22px, 6vw, 28px);
-  }
-  .btn-eq:active { box-shadow: 0 2px 8px rgba(0,200,83,0.2); }
-
-  .btn-zero {
-    grid-column: span 1;
-    aspect-ratio: 1;
-  }
-
-  /* Animación de resultado */
-  @keyframes pop {
-    0%   { transform: scale(1); }
-    50%  { transform: scale(1.04); }
-    100% { transform: scale(1); }
-  }
-  .pop { animation: pop 0.2s ease; }
-
-  /* Banner instalar */
-  .install-banner {
-    display: none;
-    background: linear-gradient(135deg, #1a3a2a, #0d2018);
-    border: 1px solid rgba(0,200,83,0.3);
-    border-radius: 16px;
-    padding: 12px 16px;
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
-    flex-shrink: 0;
-  }
-  .install-banner.show { display: flex; }
-  .install-banner p { flex: 1; font-size: 13px; color: #aaa; line-height: 1.4; }
-  .install-banner p span { color: var(--accent); font-weight: 600; }
-  .install-btn {
-    background: var(--accent);
-    color: #000;
-    border: none;
-    border-radius: 10px;
-    padding: 8px 14px;
-    font-family: 'Outfit', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .close-banner {
-    background: none; border: none;
-    color: var(--text-dim); font-size: 18px;
-    cursor: pointer; padding: 0 4px;
-    line-height: 1;
-  }
+/* Valor actual badge */
+.current-val-badge{
+  display:none;background:#2e2845;border:1px solid #6c35de44;
+  border-radius:12px;padding:6px 14px;margin:0 16px 8px;
+  font-size:12px;color:#a78bfa;flex-shrink:0;text-align:center}
+.current-val-badge.show{display:block}
 </style>
 </head>
 <body>
-
 <div class="app">
-
-  <!-- Banner instalar PWA -->
-  <div class="install-banner" id="installBanner">
-    <p>¿Quieres tener esta <span>app en tu pantalla</span> de inicio?</p>
-    <button class="install-btn" id="installBtn">Instalar</button>
-    <button class="close-banner" id="closeBanner">✕</button>
-  </div>
-
-  <!-- Pantalla -->
   <div class="display">
     <div class="expression" id="expression"></div>
-    <div class="result" id="result">0</div>
+    <div class="result"     id="result">0</div>
   </div>
-
-  <!-- Teclado -->
   <div class="grid">
-    <!-- Fila 1 -->
-    <button class="btn btn-clear" data-val="C">C</button>
-    <button class="btn btn-fn"    data-val="( )">( )</button>
-    <button class="btn btn-fn"    data-val="%">%</button>
-    <button class="btn btn-op"    data-val="/">÷</button>
-
-    <!-- Fila 2 -->
-    <button class="btn btn-num" data-val="7">7</button>
-    <button class="btn btn-num" data-val="8">8</button>
-    <button class="btn btn-num" data-val="9">9</button>
-    <button class="btn btn-op"  data-val="x">×</button>
-
-    <!-- Fila 3 -->
-    <button class="btn btn-num" data-val="4">4</button>
-    <button class="btn btn-num" data-val="5">5</button>
-    <button class="btn btn-num" data-val="6">6</button>
-    <button class="btn btn-op"  data-val="-">−</button>
-
-    <!-- Fila 4 -->
-    <button class="btn btn-num" data-val="1">1</button>
-    <button class="btn btn-num" data-val="2">2</button>
-    <button class="btn btn-num" data-val="3">3</button>
-    <button class="btn btn-op"  data-val="+">+</button>
-
-    <!-- Fila 5 -->
-    <button class="btn btn-fn"  data-val="+/-">±</button>
-    <button class="btn btn-num btn-zero" data-val="0">0</button>
-    <button class="btn btn-fn"  data-val=".">.</button>
-    <button class="btn btn-eq"  data-val="=">=</button>
+    <button class="btn b-C"    data-val="C">C</button>
+    <button class="btn b-par"  data-val="DEL">⌫</button>
+    <button class="btn b-pct"  data-val="%">%</button>
+    <button class="btn b-div"  data-val="/">÷</button>
+    <button class="btn b-7"    data-val="7">7</button>
+    <button class="btn b-8"    data-val="8">8</button>
+    <button class="btn b-9"    data-val="9">9</button>
+    <button class="btn b-mul"  data-val="*">×</button>
+    <button class="btn b-4"    data-val="4">4</button>
+    <button class="btn b-5"    data-val="5">5</button>
+    <button class="btn b-6"    data-val="6">6</button>
+    <button class="btn b-sub"  data-val="-">−</button>
+    <button class="btn b-1"    data-val="1">1</button>
+    <button class="btn b-2"    data-val="2">2</button>
+    <button class="btn b-3"    data-val="3">3</button>
+    <button class="btn b-add"  data-val="+">+</button>
+    <button class="btn b-sign" data-val="+/-">±</button>
+    <button class="btn b-0"    data-val="0">0</button>
+    <button class="btn b-dot"  data-val=".">.</button>
+    <button class="btn b-ai"   data-val="AI" id="btnAI">✨ IA</button>
   </div>
+</div>
 
+<!-- ══ CHAT IA ══ -->
+<div class="chat-overlay" id="chatOverlay">
+  <div class="chat-box">
+    <div class="chat-header">
+      <div class="chat-avatar">🤖</div>
+      <div class="chat-title">
+        <h3>Asistente Matemático</h3>
+        <p>Powered by Claude · siempre disponible</p>
+      </div>
+      <button class="chat-close" id="chatClose">✕</button>
+    </div>
+
+    <div class="current-val-badge" id="currentValBadge"></div>
+
+    <div class="chat-messages" id="chatMessages"></div>
+
+    <div class="suggestions" id="suggestions">
+      <button class="sug-btn" data-q="¿Cuánto es el 15% de propina sobre este valor?">💰 15% propina</button>
+      <button class="sug-btn" data-q="Explícame el resultado paso a paso">📖 Explicar</button>
+      <button class="sug-btn" data-q="Convierte este valor de dólares a euros">💱 USD→EUR</button>
+      <button class="sug-btn" data-q="¿Cuánto es este valor con 21% de IVA?">🧾 +IVA</button>
+      <button class="sug-btn" data-q="¿Cuánto es el 20% de descuento sobre este valor?">🏷️ 20% desc.</button>
+    </div>
+
+    <div class="chat-input-row">
+      <input class="chat-input" id="chatInput" placeholder="Pregunta algo matemático…" autocomplete="off">
+      <button class="chat-send" id="chatSend">➤</button>
+    </div>
+  </div>
 </div>
 
 <script>
-  // ── Estado ──────────────────────────────────
-  let current  = '';
-  let previous = '';
-  let operator = '';
-  let shown    = false;
+// ═══════════════════════════════════════════
+//  CALCULADORA
+// ═══════════════════════════════════════════
+let current='',previous='',op='',justCalc=false,lastKeyWasOp=false;
+const elResult=document.getElementById('result');
+const elExpr=document.getElementById('expression');
 
-  const elResult = document.getElementById('result');
-  const elExpr   = document.getElementById('expression');
+function updateDisplay(val){
+  const s=String(val);
+  elResult.textContent=s||'0';
+  elResult.className='result'+(s.length>12?' smaller':s.length>8?' shrink':'');
+}
+function fmt(n){
+  if(!isFinite(n))return'Error';
+  const r=parseFloat(n.toPrecision(10));
+  if(Number.isInteger(r))return String(r);
+  return String(r);
+}
+function opSymbol(o){return{'+':'+','-':'−','*':'×','/':'÷'}[o]||o;}
+function reset(){current='';previous='';op='';justCalc=false;lastKeyWasOp=false;}
 
-  // ── Actualizar display ───────────────────────
-  function updateDisplay(val) {
-    elResult.textContent = val || '0';
-    elResult.className = 'result' + (String(val).length > 9 ? ' small' : '');
+function calculate(){
+  const a=parseFloat(previous),b=parseFloat(current);
+  if(isNaN(a)||isNaN(b))return;
+  let result;
+  switch(op){
+    case'+':result=a+b;break;case'-':result=a-b;break;
+    case'*':result=a*b;break;
+    case'/':
+      if(b===0){elExpr.textContent='División entre cero';updateDisplay('Error');reset();return;}
+      result=a/b;break;
+    default:return;
   }
+  const res=fmt(result);
+  elExpr.textContent=`${previous} ${opSymbol(op)} ${current} =`;
+  updateDisplay(res);
+  elResult.classList.add('flash');
+  setTimeout(()=>elResult.classList.remove('flash'),200);
+  current=res;previous='';op='';justCalc=true;lastKeyWasOp=false;
+}
 
-  // ── Formatear número ─────────────────────────
-  function fmt(n) {
-    if (!isFinite(n)) return 'Error';
-    if (n === Math.floor(n)) return String(Math.floor(n));
-    return String(parseFloat(n.toFixed(10)));
+function handle(val){
+  if('0123456789'.includes(val)){
+    if(justCalc){current='';justCalc=false;}
+    if(current.replace('-','').replace('.','').length>=12)return;
+    current=current==='0'?val:current+val;
+    lastKeyWasOp=false;updateDisplay(current);return;
   }
-
-  // ── Calcular ─────────────────────────────────
-  function calculate() {
-    const a = parseFloat(previous);
-    const b = parseFloat(current);
-    let r;
-    if (operator === '+') r = a + b;
-    if (operator === '-') r = a - b;
-    if (operator === 'x') r = a * b;
-    if (operator === '/') {
-      if (b === 0) {
-        elExpr.textContent = 'No se puede dividir entre 0';
-        updateDisplay('Error');
-        current = ''; previous = ''; operator = '';
-        return;
-      }
-      r = a / b;
-    }
-    const res = fmt(r);
-    elExpr.textContent = `${previous} ${operator === 'x' ? '×' : operator === '/' ? '÷' : operator} ${current} =`;
-    updateDisplay(res);
-    // Animación
-    elResult.classList.add('flash');
-    void elResult.offsetWidth;
-    elResult.classList.add('pop');
-    setTimeout(() => elResult.classList.remove('flash', 'pop'), 300);
-
-    current = res; previous = ''; operator = ''; shown = true;
+  if(val==='.'){
+    if(justCalc){current='0';justCalc=false;}
+    if(current==='')current='0';
+    if(!current.includes('.')){current+='.';updateDisplay(current);}
+    lastKeyWasOp=false;return;
   }
-
-  // ── Handler principal ────────────────────────
-  function handle(val) {
-    // Dígitos
-    if ('0123456789'.includes(val)) {
-      if (shown) { current = ''; shown = false; }
-      if (current === '0') current = val;
-      else current += val;
-      updateDisplay(current);
-      return;
-    }
-    // Punto
-    if (val === '.') {
-      if (!current.includes('.')) {
-        if (current === '') current = '0';
-        current += '.';
-        updateDisplay(current);
-      }
-      return;
-    }
-    // Limpiar
-    if (val === 'C') {
-      current = ''; previous = ''; operator = ''; shown = false;
-      updateDisplay('0'); elExpr.textContent = '';
-      return;
-    }
-    // ( ) → borrar último carácter
-    if (val === '( )') {
-      if (current.length > 0) {
-        current = current.slice(0, -1);
-        updateDisplay(current || '0');
-      }
-      return;
-    }
-    // Porcentaje
-    if (val === '%') {
-      if (current !== '') {
-        current = fmt(parseFloat(current) / 100);
-        updateDisplay(current);
-      }
-      return;
-    }
-    // Signo
-    if (val === '+/-') {
-      if (current !== '' && current !== '0') {
-        current = current.startsWith('-') ? current.slice(1) : '-' + current;
-        updateDisplay(current);
-      }
-      return;
-    }
-    // Operadores
-    if (['+','-','x','/'].includes(val)) {
-      if (current !== '') {
-        if (previous !== '' && operator !== '') calculate();
-        previous = current; operator = val; current = ''; shown = false;
-        const sym = val === 'x' ? '×' : val === '/' ? '÷' : val;
-        elExpr.textContent = previous + ' ' + sym;
-      }
-      return;
-    }
-    // Igual
-    if (val === '=') {
-      if (previous !== '' && operator !== '' && current !== '') calculate();
-    }
+  if(val==='C'){reset();updateDisplay('0');elExpr.textContent='';return;}
+  if(val==='DEL'){
+    if(justCalc){reset();updateDisplay('0');return;}
+    current=current.slice(0,-1);updateDisplay(current||'0');return;
   }
+  if(val==='%'){
+    if(current==='')return;
+    const n=parseFloat(current);
+    current=previous!==''&&op!==''?fmt(parseFloat(previous)*n/100):fmt(n/100);
+    updateDisplay(current);lastKeyWasOp=false;return;
+  }
+  if(val==='+/-'){
+    if(current===''||current==='0')return;
+    current=current.startsWith('-')?current.slice(1):'-'+current;
+    updateDisplay(current);return;
+  }
+  if(['+','-','*','/'].includes(val)){
+    if(current===''&&previous==='')return;
+    if(lastKeyWasOp){op=val;elExpr.textContent=previous+' '+opSymbol(val);return;}
+    if(previous!==''&&op!==''&&current!=='')calculate();
+    if(current!==''){previous=current;current='';}
+    op=val;justCalc=false;lastKeyWasOp=true;
+    elExpr.textContent=previous+' '+opSymbol(val);return;
+  }
+  if(val==='='){
+    if(previous===''||op===''||current==='')return;
+    lastKeyWasOp=false;calculate();
+  }
+  if(val==='AI'){openChat();return;}
+}
 
-  // ── Eventos de botones ───────────────────────
-  document.querySelectorAll('.btn').forEach(btn => {
-    btn.addEventListener('pointerdown', e => {
-      e.preventDefault();
-      handle(btn.dataset.val);
+document.querySelectorAll('.btn').forEach(btn=>{
+  btn.addEventListener('pointerdown',e=>{e.preventDefault();handle(btn.dataset.val);});
+});
+
+// ═══════════════════════════════════════════
+//  CHAT IA
+// ═══════════════════════════════════════════
+const overlay=document.getElementById('chatOverlay');
+const msgs=document.getElementById('chatMessages');
+const input=document.getElementById('chatInput');
+const sendBtn=document.getElementById('chatSend');
+const badge=document.getElementById('currentValBadge');
+let chatHistory=[];
+let isLoading=false;
+
+function openChat(){
+  overlay.classList.add('open');
+  // Mostrar valor actual si hay uno
+  const val=elResult.textContent;
+  if(val&&val!=='0'&&val!=='Error'){
+    badge.textContent=`Valor en pantalla: ${val}`;
+    badge.classList.add('show');
+  } else {
+    badge.classList.remove('show');
+  }
+  // Mensaje de bienvenida solo la primera vez
+  if(msgs.children.length===0){
+    addMsg('bot','👋 ¡Hola! Soy tu asistente matemático. Puedo ayudarte a:\n\n• Resolver problemas paso a paso\n• Calcular propinas, descuentos e impuestos\n• Convertir unidades y monedas\n• Explicar cualquier cálculo\n\n¿En qué te puedo ayudar?');
+  }
+  setTimeout(()=>input.focus(),300);
+}
+
+function closeChat(){
+  overlay.classList.remove('open');
+}
+
+function addMsg(role,text){
+  const div=document.createElement('div');
+  div.className=`msg ${role}`;
+  div.textContent=text;
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+  return div;
+}
+
+function addTyping(){
+  const div=document.createElement('div');
+  div.className='msg typing';
+  div.id='typing';
+  div.textContent='Escribiendo…';
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+function removeTyping(){
+  const t=document.getElementById('typing');
+  if(t)t.remove();
+}
+
+async function sendMessage(text){
+  if(!text.trim()||isLoading)return;
+  isLoading=true;
+  sendBtn.disabled=true;
+  input.value='';
+
+  // Mensaje usuario
+  addMsg('user',text);
+
+  // Contexto con valor actual
+  const val=elResult.textContent;
+  const ctx=val&&val!=='0'&&val!=='Error'
+    ?`El usuario tiene actualmente el valor ${val} en la calculadora. `:'';
+
+  // Historial para contexto
+  chatHistory.push({role:'user',content:text});
+
+  addTyping();
+
+  try{
+    const response=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:`Eres un asistente matemático integrado en una calculadora móvil. 
+${ctx}
+Ayudas con cálculos, explicas paso a paso, conviertes unidades y monedas, calculas propinas, descuentos e impuestos.
+Responde siempre en español, de forma clara y concisa. 
+Usa emojis ocasionalmente para hacer la respuesta más amigable.
+Si el usuario pregunta sobre el valor en pantalla, úsalo en tus cálculos.
+Máximo 3-4 líneas por respuesta salvo que se pida explicación detallada.`,
+        messages:chatHistory.slice(-6) // últimos 6 mensajes para contexto
+      })
     });
-  });
 
-  // ── PWA Install ──────────────────────────────
-  let deferredPrompt = null;
-  const banner    = document.getElementById('installBanner');
-  const installBtn = document.getElementById('installBtn');
-  const closeBtn   = document.getElementById('closeBanner');
+    const data=await response.json();
+    removeTyping();
 
-  window.addEventListener('beforeinstallprompt', e => {
-    e.preventDefault();
-    deferredPrompt = e;
-    banner.classList.add('show');
-  });
-
-  installBtn.addEventListener('click', async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    deferredPrompt = null;
-    banner.classList.remove('show');
-  });
-
-  closeBtn.addEventListener('click', () => banner.classList.remove('show'));
-
-  // Registrar Service Worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    if(data.content&&data.content[0]){
+      const reply=data.content[0].text;
+      chatHistory.push({role:'assistant',content:reply});
+      addMsg('bot',reply);
+    } else {
+      addMsg('bot','⚠️ No pude obtener respuesta. Verifica tu conexión.');
+    }
+  } catch(e){
+    removeTyping();
+    addMsg('bot','⚠️ Error de conexión. Asegúrate de tener internet.');
   }
+
+  isLoading=false;
+  sendBtn.disabled=false;
+  input.focus();
+}
+
+// Eventos chat
+document.getElementById('chatClose').addEventListener('click',closeChat);
+overlay.addEventListener('pointerdown',e=>{if(e.target===overlay)closeChat();});
+
+sendBtn.addEventListener('click',()=>sendMessage(input.value));
+input.addEventListener('keydown',e=>{if(e.key==='Enter')sendMessage(input.value);});
+
+document.querySelectorAll('.sug-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>sendMessage(btn.dataset.q));
+});
+
+// ═══════════════════════════════════════════
+//  PWA
+// ═══════════════════════════════════════════
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
 </script>
 </body>
 </html>
