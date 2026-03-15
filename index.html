@@ -7,11 +7,15 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Calculadora">
+<meta name="apple-mobile-web-app-title" content="CalcuPiola">
 <link rel="manifest" href="manifest.json">
-<title>Calculadora IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&display=swap"></noscript>
+<title>CalcuPiola</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700;800&display=swap');
+/* fuente cargada en <head> */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#111318;--surface:#1B1F27;--surface2:#222731;
@@ -129,12 +133,13 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
 
 /* ── HISTORIAL ── */
 .history-overlay{display:none;position:fixed;inset:0;z-index:90;
-  background:rgba(0,0,0,.65);backdrop-filter:blur(5px);
+  background:rgba(0,0,0,.75);
   align-items:flex-end;justify-content:center;}
 .history-overlay.open{display:flex;}
 .history-box{width:100%;max-width:480px;height:60vh;background:var(--surface);
   border-radius:28px 28px 0 0;display:flex;flex-direction:column;overflow:hidden;
   border:1px solid rgba(255,255,255,.06);animation:slideUp .25s ease;}
+@supports(backdrop-filter:blur(5px)){.history-overlay.open,.chat-overlay.open{backdrop-filter:blur(5px);background:rgba(0,0,0,.6);}}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .history-header{display:flex;align-items:center;justify-content:space-between;
   padding:16px 20px;background:var(--surface2);flex-shrink:0;
@@ -157,7 +162,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
 
 /* ══════════════ CHAT IA ══════════════ */
 .chat-overlay{display:none;position:fixed;inset:0;z-index:100;
-  background:rgba(0,0,0,.65);backdrop-filter:blur(5px);
+  background:rgba(0,0,0,.75);
   align-items:flex-end;justify-content:center;}
 .chat-overlay.open{display:flex;}
 .chat-box{width:100%;max-width:480px;height:72vh;background:var(--surface);
@@ -319,7 +324,8 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
 // ═══════════════════════════════════════
 let current='',previous='',op='',justCalc=false,lastKeyWasOp=false;
 let sciMode=false;
-let calcHistory=JSON.parse(localStorage.getItem('calcHistory')||'[]');
+let calcHistory=[];
+try{calcHistory=JSON.parse(localStorage.getItem('calcHistory')||'[]');}catch(e){calcHistory=[];}
 
 const elResult=document.getElementById('result');
 const elExpr=document.getElementById('expression');
@@ -367,7 +373,8 @@ function vibrate(){
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2000);
+  clearTimeout(t._t);
+  t._t=setTimeout(()=>t.classList.remove('show'),2000);
 }
 
 // ═══════════════════════════════════════
@@ -376,7 +383,7 @@ function showToast(msg){
 function saveHistory(expr,result){
   calcHistory.unshift({expr,result,time:Date.now()});
   if(calcHistory.length>50)calcHistory.pop();
-  localStorage.setItem('calcHistory',JSON.stringify(calcHistory));
+  try{localStorage.setItem('calcHistory',JSON.stringify(calcHistory));}catch(e){}
 }
 
 function renderHistory(){
@@ -431,7 +438,8 @@ function calculate(){
   elExpr.textContent=expr;
   updateDisplay(res);
   elResult.classList.add('flash');
-  setTimeout(()=>elResult.classList.remove('flash'),200);
+  clearTimeout(elResult._ft);
+  elResult._ft=setTimeout(()=>elResult.classList.remove('flash'),200);
   saveHistory(expr,res);
   current=res;previous='';op='';justCalc=true;lastKeyWasOp=false;
 }
@@ -577,8 +585,10 @@ function handle(val){
 // ═══════════════════════════════════════
 //  EVENTOS BOTONES
 // ═══════════════════════════════════════
-document.querySelectorAll('.btn').forEach(btn=>{
-  btn.addEventListener('pointerdown',e=>{e.preventDefault();handle(btn.dataset.val);});
+document.getElementById('mainGrid').addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  const btn=e.target.closest('.btn');
+  if(btn&&btn.dataset.val)handle(btn.dataset.val);
 });
 
 // Copiar resultado
@@ -588,7 +598,8 @@ document.getElementById('btnCopy').addEventListener('click',()=>{
     const btn=document.getElementById('btnCopy');
     btn.classList.add('copied');btn.textContent='✓';
     showToast('Copiado al portapapeles');
-    setTimeout(()=>{btn.classList.remove('copied');btn.textContent='⎘';},1500);
+    clearTimeout(btn._t);
+    btn._t=setTimeout(()=>{btn.classList.remove('copied');btn.textContent='⎘';},1500);
   }).catch(()=>{
     // Fallback para navegadores sin clipboard API
     const ta=document.createElement('textarea');
@@ -603,7 +614,7 @@ document.getElementById('btnCopy').addEventListener('click',()=>{
 document.getElementById('btnHist').addEventListener('click',openHistory);
 document.getElementById('historyClose').addEventListener('click',closeHistory);
 document.getElementById('historyClear').addEventListener('click',()=>{
-  calcHistory=[];localStorage.removeItem('calcHistory');renderHistory();
+  calcHistory=[];try{localStorage.removeItem('calcHistory');}catch(e){}renderHistory();
 });
 document.getElementById('historyOverlay').addEventListener('pointerdown',e=>{
   if(e.target===document.getElementById('historyOverlay'))closeHistory();

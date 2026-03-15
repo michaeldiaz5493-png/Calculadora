@@ -1,11 +1,12 @@
 {
-  "name": "Mi Calculadora",
-  "short_name": "Calculadora",
-  "description": "Calculadora moderna para Android",
+  "name": "CalcuPiola",
+  "short_name": "CalcuPiola",
+  "description": "Calculadora moderna con IA \u2014 CalcuPiola",
   "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#0a0a0a",
+  "scope": "./",
+  "display": "fullscreen",
+  "background_color": "#111318",
+  "theme_color": "#111318",
   "orientation": "portrait",
   "icons": [
     {
