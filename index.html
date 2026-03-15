@@ -716,12 +716,10 @@ async function sendMessage(text){
   if(chatHistory.length>30)chatHistory=chatHistory.slice(-30);
   addTyping();
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
+    const res=await fetch('https://calcupiola-proxy.michaeldiaz5493.workers.dev',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
         system:`Eres un asistente matemático en una calculadora móvil. ${ctx}Responde en español, de forma clara y concisa. Usa emojis ocasionalmente. Máximo 4 líneas salvo que pidan explicación detallada.`,
         messages:chatHistory.slice(-6)
       })
