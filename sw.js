@@ -1,4 +1,4 @@
-const CACHE = 'calculadora-v4';
+const CACHE = 'calculadora-v5';
 const FILES = [
   './',
   './index.html',
@@ -11,7 +11,6 @@ self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE).then(c => c.addAll(FILES))
   );
-  // Fuerza activación inmediata sin esperar a que se cierren pestañas
   self.skipWaiting();
 });
 
@@ -21,13 +20,11 @@ self.addEventListener('activate', e => {
       Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
     )
   );
-  // Toma control de todas las pestañas abiertas inmediatamente
   self.clients.claim();
 });
 
 self.addEventListener('fetch', e => {
   e.respondWith(
-    // Network first: intenta obtener versión fresca, cae en caché si falla
     fetch(e.request)
       .then(res => {
         const clone = res.clone();
