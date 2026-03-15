@@ -341,6 +341,15 @@ let sciMode=false;
 let calcHistory=[];
 try{calcHistory=JSON.parse(localStorage.getItem('calcHistory')||'[]');}catch(e){calcHistory=[];}
 
+// Ocultar tooltip si el usuario ya lo vio antes
+try{
+  const tipSeen = localStorage.getItem('tooltipSeen');
+  if(tipSeen){
+    const tip = document.getElementById('fabTooltip');
+    if(tip) tip.style.display='none';
+  }
+}catch(e){}
+
 const elResult=document.getElementById('result');
 const elExpr=document.getElementById('expression');
 
@@ -607,6 +616,12 @@ document.getElementById('mainGrid').addEventListener('pointerdown',e=>{
   const btn=e.target.closest('.btn');
   if(!btn||!btn.dataset.val)return;
   vibrate();
+  // Ocultar tooltip al primer uso de la calculadora
+  const tip=document.getElementById('fabTooltip');
+  if(tip&&tip.style.display!=='none'){
+    tip.style.display='none';
+    try{localStorage.setItem('tooltipSeen','1');}catch(e){}
+  }
   if(btn.dataset.sci==='true'){
     handleSci(btn.dataset.val);
   } else {
@@ -664,7 +679,10 @@ function openChat(){
   const fab=document.getElementById('btnAI');
   if(fab)fab.classList.add('compact');
   const tip=document.getElementById('fabTooltip');
-  if(tip)tip.style.display='none';
+  if(tip){
+    tip.style.display='none';
+    try{localStorage.setItem('tooltipSeen','1');}catch(e){}
+  }
   const val=elResult.textContent.replace(/,/g,'');
   if(val&&val!=='0'&&val!=='Error'){
     badge.textContent='Valor en pantalla: '+elResult.textContent;
